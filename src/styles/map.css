@@ -1,0 +1,241 @@
+/* Map component styles */
+.map-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+}
+
+/* OpenLayers map styles */
+.ol-viewport {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ol-control {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.ol-control button {
+  background-color: transparent !important;
+  color: #374151 !important;
+  font-weight: 500 !important;
+  border: none !important;
+  border-radius: 4px !important;
+  transition: all 0.2s ease !important;
+}
+
+.ol-control button:hover {
+  background-color: #f3f4f6 !important;
+  color: #111827 !important;
+}
+
+.ol-control button:focus {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+}
+
+/* Zoom controls positioning */
+.ol-zoom {
+  top: 1rem !important;
+  left: 1rem !important;
+}
+
+/* Attribution control styling */
+.ol-attribution {
+  bottom: 0.5rem !important;
+  right: 0.5rem !important;
+  font-size: 0.75rem !important;
+  max-width: 200px !important;
+}
+
+.ol-attribution ul {
+  color: #6b7280 !important;
+}
+
+.ol-attribution a {
+  color: #3b82f6 !important;
+  text-decoration: none !important;
+}
+
+.ol-attribution a:hover {
+  text-decoration: underline !important;
+}
+
+/* Custom tooltip styles */
+.map-tooltip {
+  position: absolute;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  z-index: 1000;
+  max-width: 250px;
+  font-size: 0.875rem;
+}
+
+.map-tooltip h3 {
+  margin: 0 0 8px 0;
+  font-weight: 600;
+  color: #111827;
+}
+
+.map-tooltip .score-high {
+  color: #059669;
+}
+
+.map-tooltip .score-medium {
+  color: #d97706;
+}
+
+.map-tooltip .score-low {
+  color: #dc2626;
+}
+
+/* Legend styles */
+.map-legend {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.map-legend h4 {
+  margin: 0 0 12px 0;
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.875rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.legend-item:last-child {
+  margin-bottom: 0;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  margin-right: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.legend-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Loading and error overlays */
+.map-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.map-loading {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.map-error {
+  background-color: rgba(254, 242, 242, 0.95);
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .map-legend {
+    bottom: 0.5rem;
+    right: 0.5rem;
+    padding: 12px;
+  }
+  
+  .map-tooltip {
+    max-width: 200px;
+    padding: 8px;
+    font-size: 0.8rem;
+  }
+  
+  .ol-zoom {
+    top: 0.5rem !important;
+    left: 0.5rem !important;
+  }
+  
+  .ol-attribution {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .map-legend {
+    position: relative;
+    bottom: auto;
+    right: auto;
+    margin-top: 1rem;
+    box-shadow: none;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .map-container {
+    min-height: 300px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .ol-control {
+    background-color: white !important;
+    border: 2px solid #000 !important;
+  }
+  
+  .map-tooltip,
+  .map-legend {
+    border: 2px solid #000;
+  }
+  
+  .legend-color {
+    border: 2px solid #000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner {
+    animation: none;
+  }
+  
+  .ol-control button {
+    transition: none !important;
+  }
+}

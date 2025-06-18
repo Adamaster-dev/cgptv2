@@ -1,0 +1,374 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "USA",
+        "NAME": "United States of America",
+        "NAME_LONG": "United States of America",
+        "CONTINENT": "North America",
+        "REGION_UN": "Americas",
+        "SUBREGION": "Northern America",
+        "TYPE": "Sovereign country",
+        "ADMIN": "United States of America",
+        "ISO_A2": "US"
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [[[-158.0, 21.5], [-158.0, 22.5], [-157.0, 22.5], [-157.0, 21.5], [-158.0, 21.5]]],
+          [[[-179.0, 51.0], [-179.0, 72.0], [-130.0, 72.0], [-130.0, 48.0], [-66.0, 48.0], [-66.0, 25.0], [-125.0, 25.0], [-125.0, 51.0], [-179.0, 51.0]]]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "CAN",
+        "NAME": "Canada",
+        "NAME_LONG": "Canada",
+        "CONTINENT": "North America",
+        "REGION_UN": "Americas",
+        "SUBREGION": "Northern America",
+        "TYPE": "Sovereign country",
+        "ADMIN": "Canada",
+        "ISO_A2": "CA"
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [[[-141.0, 60.0], [-141.0, 83.0], [-52.0, 83.0], [-52.0, 41.0], [-141.0, 41.0], [-141.0, 60.0]]]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "MEX",
+        "NAME": "Mexico",
+        "NAME_LONG": "Mexico",
+        "CONTINENT": "North America",
+        "REGION_UN": "Americas",
+        "SUBREGION": "Central America",
+        "TYPE": "Sovereign country",
+        "ADMIN": "Mexico",
+        "ISO_A2": "MX"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-117.0, 32.5], [-117.0, 14.5], [-86.0, 14.5], [-86.0, 32.5], [-117.0, 32.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "BRA",
+        "NAME": "Brazil",
+        "NAME_LONG": "Brazil",
+        "CONTINENT": "South America",
+        "REGION_UN": "Americas",
+        "SUBREGION": "South America",
+        "TYPE": "Sovereign country",
+        "ADMIN": "Brazil",
+        "ISO_A2": "BR"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-74.0, 5.0], [-74.0, -34.0], [-34.0, -34.0], [-34.0, 5.0], [-74.0, 5.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "ARG",
+        "NAME": "Argentina",
+        "NAME_LONG": "Argentina",
+        "CONTINENT": "South America",
+        "REGION_UN": "Americas",
+        "SUBREGION": "South America",
+        "TYPE": "Sovereign country",
+        "ADMIN": "Argentina",
+        "ISO_A2": "AR"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.0, -21.0], [-73.0, -55.0], [-53.0, -55.0], [-53.0, -21.0], [-73.0, -21.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "GBR",
+        "NAME": "United Kingdom",
+        "NAME_LONG": "United Kingdom",
+        "CONTINENT": "Europe",
+        "REGION_UN": "Europe",
+        "SUBREGION": "Northern Europe",
+        "TYPE": "Sovereign country",
+        "ADMIN": "United Kingdom",
+        "ISO_A2": "GB"
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [[[-8.0, 49.0], [-8.0, 61.0], [2.0, 61.0], [2.0, 49.0], [-8.0, 49.0]]]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "FRA",
+        "NAME": "France",
+        "NAME_LONG": "France",
+        "CONTINENT": "Europe",
+        "REGION_UN": "Europe",
+        "SUBREGION": "Western Europe",
+        "TYPE": "Sovereign country",
+        "ADMIN": "France",
+        "ISO_A2": "FR"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-5.0, 42.0], [-5.0, 51.0], [8.0, 51.0], [8.0, 42.0], [-5.0, 42.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "DEU",
+        "NAME": "Germany",
+        "NAME_LONG": "Germany",
+        "CONTINENT": "Europe",
+        "REGION_UN": "Europe",
+        "SUBREGION": "Western Europe",
+        "TYPE": "Sovereign country",
+        "ADMIN": "Germany",
+        "ISO_A2": "DE"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[5.0, 47.0], [5.0, 55.0], [15.0, 55.0], [15.0, 47.0], [5.0, 47.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "ITA",
+        "NAME": "Italy",
+        "NAME_LONG": "Italy",
+        "CONTINENT": "Europe",
+        "REGION_UN": "Europe",
+        "SUBREGION": "Southern Europe",
+        "TYPE": "Sovereign country",
+        "ADMIN": "Italy",
+        "ISO_A2": "IT"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[6.0, 36.0], [6.0, 47.0], [19.0, 47.0], [19.0, 36.0], [6.0, 36.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "ESP",
+        "NAME": "Spain",
+        "NAME_LONG": "Spain",
+        "CONTINENT": "Europe",
+        "REGION_UN": "Europe",
+        "SUBREGION": "Southern Europe",
+        "TYPE": "Sovereign country",
+        "ADMIN": "Spain",
+        "ISO_A2": "ES"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-9.0, 36.0], [-9.0, 44.0], [4.0, 44.0], [4.0, 36.0], [-9.0, 36.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "RUS",
+        "NAME": "Russia",
+        "NAME_LONG": "Russian Federation",
+        "CONTINENT": "Asia",
+        "REGION_UN": "Europe",
+        "SUBREGION": "Eastern Europe",
+        "TYPE": "Sovereign country",
+        "ADMIN": "Russia",
+        "ISO_A2": "RU"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[19.0, 41.0], [19.0, 82.0], [-169.0, 82.0], [-169.0, 41.0], [19.0, 41.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "CHN",
+        "NAME": "China",
+        "NAME_LONG": "China",
+        "CONTINENT": "Asia",
+        "REGION_UN": "Asia",
+        "SUBREGION": "Eastern Asia",
+        "TYPE": "Sovereign country",
+        "ADMIN": "China",
+        "ISO_A2": "CN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[73.0, 18.0], [73.0, 53.0], [135.0, 53.0], [135.0, 18.0], [73.0, 18.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "JPN",
+        "NAME": "Japan",
+        "NAME_LONG": "Japan",
+        "CONTINENT": "Asia",
+        "REGION_UN": "Asia",
+        "SUBREGION": "Eastern Asia",
+        "TYPE": "Sovereign country",
+        "ADMIN": "Japan",
+        "ISO_A2": "JP"
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [[[129.0, 30.0], [129.0, 46.0], [146.0, 46.0], [146.0, 30.0], [129.0, 30.0]]]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "IND",
+        "NAME": "India",
+        "NAME_LONG": "India",
+        "CONTINENT": "Asia",
+        "REGION_UN": "Asia",
+        "SUBREGION": "Southern Asia",
+        "TYPE": "Sovereign country",
+        "ADMIN": "India",
+        "ISO_A2": "IN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[68.0, 6.0], [68.0, 37.0], [97.0, 37.0], [97.0, 6.0], [68.0, 6.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "AUS",
+        "NAME": "Australia",
+        "NAME_LONG": "Australia",
+        "CONTINENT": "Oceania",
+        "REGION_UN": "Oceania",
+        "SUBREGION": "Australia and New Zealand",
+        "TYPE": "Sovereign country",
+        "ADMIN": "Australia",
+        "ISO_A2": "AU"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[113.0, -44.0], [113.0, -10.0], [154.0, -10.0], [154.0, -44.0], [113.0, -44.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "ZAF",
+        "NAME": "South Africa",
+        "NAME_LONG": "South Africa",
+        "CONTINENT": "Africa",
+        "REGION_UN": "Africa",
+        "SUBREGION": "Southern Africa",
+        "TYPE": "Sovereign country",
+        "ADMIN": "South Africa",
+        "ISO_A2": "ZA"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[16.0, -35.0], [16.0, -22.0], [33.0, -22.0], [33.0, -35.0], [16.0, -35.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "EGY",
+        "NAME": "Egypt",
+        "NAME_LONG": "Egypt",
+        "CONTINENT": "Africa",
+        "REGION_UN": "Africa",
+        "SUBREGION": "Northern Africa",
+        "TYPE": "Sovereign country",
+        "ADMIN": "Egypt",
+        "ISO_A2": "EG"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[25.0, 22.0], [25.0, 32.0], [37.0, 32.0], [37.0, 22.0], [25.0, 22.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "NGA",
+        "NAME": "Nigeria",
+        "NAME_LONG": "Nigeria",
+        "CONTINENT": "Africa",
+        "REGION_UN": "Africa",
+        "SUBREGION": "Western Africa",
+        "TYPE": "Sovereign country",
+        "ADMIN": "Nigeria",
+        "ISO_A2": "NG"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[3.0, 4.0], [3.0, 14.0], [15.0, 14.0], [15.0, 4.0], [3.0, 4.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "KEN",
+        "NAME": "Kenya",
+        "NAME_LONG": "Kenya",
+        "CONTINENT": "Africa",
+        "REGION_UN": "Africa",
+        "SUBREGION": "Eastern Africa",
+        "TYPE": "Sovereign country",
+        "ADMIN": "Kenya",
+        "ISO_A2": "KE"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[34.0, -5.0], [34.0, 5.0], [42.0, 5.0], [42.0, -5.0], [34.0, -5.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ISO_A3": "GHA",
+        "NAME": "Ghana",
+        "NAME_LONG": "Ghana",
+        "CONTINENT": "Africa",
+        "REGION_UN": "Africa",
+        "SUBREGION": "Western Africa",
+        "TYPE": "Sovereign country",
+        "ADMIN": "Ghana",
+        "ISO_A2": "GH"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-3.0, 5.0], [-3.0, 11.0], [1.0, 11.0], [1.0, 5.0], [-3.0, 5.0]]]
+      }
+    }
+  ]
+}
