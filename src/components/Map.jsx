@@ -1,16 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Map as OLMap, View } from 'ol';
-import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
-import { OSM, Vector as VectorSource } from 'ol/source';
-import { GeoJSON } from 'ol/format';
-import { Style, Fill, Stroke, Circle, Text } from 'ol/style';
-import { fromLonLat, get as getProjection } from 'ol/proj';
-import { Point } from 'ol/geom';
-import { Feature } from 'ol';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { indexService } from '../api/indexService';
 import { BorderVerifier } from '../utils/borderVerification';
 import BorderDiagnostics from './BorderDiagnostics';
 import axios from 'axios';
+
+// Fix for default markers in Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
 
 /**
  * Apply filters to index data
@@ -106,232 +108,102 @@ function scoreToColor(score, opacity = 0.8, isFiltered = false) {
 }
 
 /**
- * Validate and debug geometry
+ * Get country style based on data
  */
-function validateGeometry(feature, countryCode) {
-  const geometry = feature.getGeometry();
-  
-  if (!geometry) {
-    console.warn(`❌ No geometry for country: ${countryCode}`);
-    return false;
-  }
-  
-  const geometryType = geometry.getType();
-  const validTypes = ['Polygon', 'MultiPolygon'];
-  
-  if (!validTypes.includes(geometryType)) {
-    console.warn(`❌ Invalid geometry type for ${countryCode}: ${geometryType}`);
-    return false;
-  }
-  
-  // Check if geometry has coordinates
-  const coordinates = geometry.getCoordinates();
-  if (!coordinates || coordinates.length === 0) {
-    console.warn(`❌ No coordinates for country: ${countryCode}`);
-    return false;
-  }
-  
-  // Validate coordinate bounds
-  const extent = geometry.getExtent();
-  if (!extent || extent.some(coord => !isFinite(coord))) {
-    console.warn(`❌ Invalid extent for country: ${countryCode}`, extent);
-    return false;
-  }
-  
-  console.log(`✅ Valid geometry for ${countryCode}: ${geometryType}, extent:`, extent);
-  return true;
-}
-
-/**
- * Create enhanced style function with comprehensive debugging
- */
-function createCountryStyleFunction(indexData, filterState, recommendedCountries, borderVerifier) {
+function getCountryStyle(countryCode, indexData, filterState, recommendedCountries, borderVerifier) {
   const filteredData = applyFilters(indexData, filterState);
   const recommendedCodes = new Set(
     recommendedCountries.map(rec => rec.countryCode || rec.country)
   );
   
-  return function(feature, resolution) {
-    // Get country identification
-    const countryCode = feature.get('ISO_A3');
-    const countryName = feature.get('NAME');
-    
-    if (!countryCode) {
-      console.warn('❌ Feature missing ISO_A3 code:', feature.getProperties());
-      return null;
-    }
-    
-    // Validate geometry before styling
-    if (!validateGeometry(feature, countryCode)) {
-      return null;
-    }
-    
-    // Get data for styling
-    const countryData = filteredData[countryCode];
-    const originalData = indexData[countryCode];
-    const score = countryData?.compositeScore;
-    
-    // Get border validation results for this country
-    const borderValidation = borderVerifier?.getCountryValidation(countryCode);
-    const hasBorderIssues = borderValidation && !borderValidation.isValid;
-    
-    // Check if this country is recommended
-    const isRecommended = recommendedCodes.has(countryCode) || recommendedCodes.has(countryName);
-    
-    // Determine if country should be visible
-    const isVisible = countryData !== undefined;
-    const isFiltered = filterState?.hasActiveFilters && !isVisible;
-    
-    let fillColor, strokeColor, strokeWidth;
-    
-    if (isFiltered) {
-      // Show filtered out countries in muted gray
-      fillColor = 'rgba(220, 220, 220, 0.3)';
-      strokeColor = 'rgba(180, 180, 180, 0.5)';
-      strokeWidth = 0.5;
-    } else if (hasBorderIssues) {
-      // Highlight countries with border validation issues
-      fillColor = scoreToColor(score, 0.6, false);
-      strokeColor = '#dc2626'; // Red border for validation issues
-      strokeWidth = 2;
-    } else if (isRecommended) {
-      // Highlight recommended countries
-      fillColor = scoreToColor(score, 0.8, false);
-      strokeColor = '#2563eb'; // Blue border for recommendations
-      strokeWidth = 3;
-    } else {
-      fillColor = scoreToColor(score, 0.7, false);
-      strokeColor = scoreToColor(score, 1.0, false);
-      strokeWidth = 1;
-    }
-    
-    // Adjust stroke width based on zoom level
-    const zoomLevel = getZoomLevelFromResolution(resolution);
-    const adjustedStrokeWidth = strokeWidth * Math.max(0.5, Math.min(2, zoomLevel / 3));
-    
-    // Debug color application
-    console.log(`🎨 Styling ${countryCode}: score=${score}, fillColor=${fillColor}, strokeColor=${strokeColor}`);
-    
-    // Create and return style
-    const style = new Style({
-      fill: new Fill({
-        color: fillColor
-      }),
-      stroke: new Stroke({
-        color: strokeColor,
-        width: adjustedStrokeWidth
-      })
-    });
-    
-    return style;
-  };
-}
-
-/**
- * Get zoom level from resolution
- */
-function getZoomLevelFromResolution(resolution) {
-  return Math.round(Math.log2(156543.03392 / resolution));
-}
-
-/**
- * Create hover style for country features
- */
-function createHoverStyle(feature, indexData, filterState, borderVerifier) {
-  const countryCode = feature.get('ISO_A3');
-  
-  if (!validateGeometry(feature, countryCode)) {
-    return null;
-  }
-  
-  const filteredData = applyFilters(indexData, filterState);
-  const countryData = filteredData[countryCode] || indexData[countryCode];
+  const countryData = filteredData[countryCode];
   const score = countryData?.compositeScore;
   
-  const isFiltered = filterState?.hasActiveFilters && !filteredData[countryCode];
+  // Get border validation results for this country
   const borderValidation = borderVerifier?.getCountryValidation(countryCode);
   const hasBorderIssues = borderValidation && !borderValidation.isValid;
+  
+  // Check if this country is recommended
+  const isRecommended = recommendedCodes.has(countryCode);
+  
+  // Determine if country should be visible
+  const isVisible = countryData !== undefined;
+  const isFiltered = filterState?.hasActiveFilters && !isVisible;
   
   let fillColor, strokeColor, strokeWidth;
   
   if (isFiltered) {
-    fillColor = 'rgba(220, 220, 220, 0.5)';
-    strokeColor = '#999999';
-    strokeWidth = 2;
+    // Show filtered out countries in muted gray
+    fillColor = 'rgba(220, 220, 220, 0.3)';
+    strokeColor = 'rgba(180, 180, 180, 0.5)';
+    strokeWidth = 0.5;
   } else if (hasBorderIssues) {
-    fillColor = scoreToColor(score, 0.9);
-    strokeColor = '#dc2626'; // Red for border issues
+    // Highlight countries with border validation issues
+    fillColor = scoreToColor(score, 0.6, false);
+    strokeColor = '#dc2626'; // Red border for validation issues
+    strokeWidth = 2;
+  } else if (isRecommended) {
+    // Highlight recommended countries
+    fillColor = scoreToColor(score, 0.8, false);
+    strokeColor = '#2563eb'; // Blue border for recommendations
     strokeWidth = 3;
   } else {
-    fillColor = scoreToColor(score, 0.9);
-    strokeColor = '#333333';
-    strokeWidth = 2;
+    fillColor = scoreToColor(score, 0.7, false);
+    strokeColor = '#ffffff'; // White border as specified
+    strokeWidth = 1;
   }
   
-  return new Style({
-    fill: new Fill({
-      color: fillColor
-    }),
-    stroke: new Stroke({
-      color: strokeColor,
-      width: strokeWidth
-    })
-  });
+  return {
+    fillColor,
+    fillOpacity: 0.7,
+    color: strokeColor,
+    weight: strokeWidth,
+    opacity: 1
+  };
 }
 
 /**
- * Create recommendation pin features
+ * Create recommendation markers
  */
-function createRecommendationPins(recommendedCountries, countryCenters) {
-  const features = [];
+function createRecommendationMarkers(recommendedCountries, countryCenters, map) {
+  const markers = [];
   
   recommendedCountries.forEach((rec, index) => {
     const countryKey = rec.countryCode || rec.country;
     const coordinates = countryCenters[countryKey];
     
     if (coordinates) {
-      const feature = new Feature({
-        geometry: new Point(fromLonLat(coordinates)),
-        recommendation: rec,
-        index: index + 1
+      // Create custom icon for recommendations
+      const customIcon = L.divIcon({
+        className: 'recommendation-marker',
+        html: `<div class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold border-2 border-white shadow-lg">${index + 1}</div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
       });
       
-      features.push(feature);
+      const marker = L.marker([coordinates[1], coordinates[0]], { icon: customIcon })
+        .bindPopup(`
+          <div class="p-2">
+            <h3 class="font-semibold text-gray-900 mb-2">${rec.country}</h3>
+            <div class="space-y-1 text-sm">
+              <div>Quality Score: <span class="font-medium">${rec.score?.toFixed(1) || 'N/A'}/100</span></div>
+              ${rec.rank ? `<div>Global Rank: <span class="font-medium">#${rec.rank}</span></div>` : ''}
+              <div>AI Match: <span class="font-medium text-blue-600">${rec.matchPercentage || 85}%</span></div>
+              ${rec.reasoning ? `<div class="mt-2 text-gray-700">${rec.reasoning}</div>` : ''}
+            </div>
+          </div>
+        `)
+        .addTo(map);
+      
+      markers.push(marker);
     }
   });
   
-  return features;
+  return markers;
 }
 
 /**
- * Create style for recommendation pins
- */
-function createPinStyle(feature) {
-  const index = feature.get('index');
-  
-  return new Style({
-    image: new Circle({
-      radius: 12,
-      fill: new Fill({
-        color: '#2563eb'
-      }),
-      stroke: new Stroke({
-        color: '#ffffff',
-        width: 2
-      })
-    }),
-    text: new Text({
-      text: index.toString(),
-      fill: new Fill({
-        color: '#ffffff'
-      }),
-      font: 'bold 12px sans-serif'
-    })
-  });
-}
-
-/**
- * Enhanced Interactive World Map Component with Comprehensive Debugging
+ * Enhanced Interactive World Map Component using Leaflet.js
  */
 const Map = ({ 
   selectedYear = 2020, 
@@ -344,9 +216,8 @@ const Map = ({
 }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
-  const vectorLayerRef = useRef(null);
-  const pinsLayerRef = useRef(null);
-  const hoveredFeatureRef = useRef(null);
+  const geoJsonLayerRef = useRef(null);
+  const recommendationMarkersRef = useRef([]);
   const borderVerifierRef = useRef(new BorderVerifier());
   
   const [indexData, setIndexData] = useState({});
@@ -370,24 +241,13 @@ const Map = ({
         const geoJsonResponse = await axios.get('/data/countries.geojson');
         console.log('📊 GeoJSON loaded:', {
           type: geoJsonResponse.data.type,
-          featureCount: geoJsonResponse.data.features?.length,
-          sampleFeature: geoJsonResponse.data.features?.[0]
+          featureCount: geoJsonResponse.data.features?.length
         });
         
         // Validate GeoJSON structure
         if (!geoJsonResponse.data.features || !Array.isArray(geoJsonResponse.data.features)) {
           throw new Error('Invalid GeoJSON structure: missing features array');
         }
-        
-        // Debug first few features
-        geoJsonResponse.data.features.slice(0, 3).forEach((feature, index) => {
-          console.log(`🗺️ Feature ${index}:`, {
-            type: feature.type,
-            properties: feature.properties,
-            geometryType: feature.geometry?.type,
-            coordinatesLength: feature.geometry?.coordinates?.length
-          });
-        });
         
         setGeoJsonData(geoJsonResponse.data);
         
@@ -402,19 +262,12 @@ const Map = ({
           const validationResults = await borderVerifierRef.current.validateBorders(geoJsonResponse.data);
           setBorderValidationResults(validationResults);
           
-          // Log validation summary
           console.log('✅ Border validation complete:', {
             totalFeatures: validationResults.totalFeatures,
             validFeatures: validationResults.validFeatures,
             invalidFeatures: validationResults.invalidFeatures,
             totalIssues: validationResults.issues.length
           });
-          
-          // Log any critical issues
-          const criticalIssues = validationResults.issues.filter(issue => issue.type === 'ERROR');
-          if (criticalIssues.length > 0) {
-            console.warn('⚠️ Critical border issues found:', criticalIssues);
-          }
         }
         
       } catch (err) {
@@ -459,8 +312,7 @@ const Map = ({
         const data = await indexService.calculateCompositeIndex(selectedYear, weightingScheme);
         console.log('📊 Index data loaded:', {
           countries: Object.keys(data).length,
-          sampleCountry: Object.keys(data)[0],
-          sampleData: data[Object.keys(data)[0]]
+          sampleCountry: Object.keys(data)[0]
         });
         setIndexData(data);
       } catch (err) {
@@ -474,194 +326,150 @@ const Map = ({
     loadIndexData();
   }, [selectedYear, weightingScheme, geoJsonData]);
 
-  // Initialize map with enhanced debugging
+  // Initialize Leaflet map
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current || !geoJsonData) return;
 
-    console.log('🗺️ Initializing OpenLayers map...');
+    console.log('🗺️ Initializing Leaflet map...');
 
     try {
-      // Create GeoJSON format instance
-      const geoJsonFormat = new GeoJSON();
-      
-      // Read features with explicit projection handling
-      console.log('🔄 Reading GeoJSON features...');
-      const features = geoJsonFormat.readFeatures(geoJsonData, {
-        dataProjection: 'EPSG:4326', // WGS84 (standard for GeoJSON)
-        featureProjection: 'EPSG:3857' // Web Mercator (standard for web maps)
+      // Create map instance
+      const map = L.map(mapRef.current, {
+        center: [0, 0],
+        zoom: 2,
+        minZoom: 1,
+        maxZoom: 10,
+        zoomControl: true,
+        attributionControl: true
       });
-      
-      console.log('✅ Features read successfully:', {
-        totalFeatures: features.length,
-        sampleFeatureType: features[0]?.getGeometry()?.getType(),
-        sampleExtent: features[0]?.getGeometry()?.getExtent()
-      });
-      
-      // Validate each feature
+
+      // Add OpenStreetMap tile layer
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18
+      }).addTo(map);
+
+      mapInstanceRef.current = map;
+
+      // Validate features
       let validFeatures = 0;
       let invalidFeatures = 0;
       
-      features.forEach((feature, index) => {
-        const countryCode = feature.get('ISO_A3');
-        const geometry = feature.getGeometry();
-        
-        if (geometry && ['Polygon', 'MultiPolygon'].includes(geometry.getType())) {
+      geoJsonData.features.forEach((feature) => {
+        if (feature.geometry && ['Polygon', 'MultiPolygon'].includes(feature.geometry.type)) {
           validFeatures++;
-          if (index < 3) { // Debug first 3 features
-            console.log(`✅ Valid feature ${index} (${countryCode}):`, {
-              type: geometry.getType(),
-              extent: geometry.getExtent(),
-              coordinates: geometry.getCoordinates().length
-            });
-          }
         } else {
           invalidFeatures++;
-          console.warn(`❌ Invalid feature ${index} (${countryCode}):`, {
-            hasGeometry: !!geometry,
-            type: geometry?.getType()
-          });
+          console.warn(`❌ Invalid feature:`, feature.properties?.ISO_A3);
         }
       });
-      
+
       console.log('📊 Feature validation summary:', { validFeatures, invalidFeatures });
-      
-      // Create vector source and layer for countries
-      const vectorSource = new VectorSource({
-        features: features
-      });
 
-      const vectorLayer = new VectorLayer({
-        source: vectorSource,
-        style: createCountryStyleFunction(indexData, filterState, recommendedCountries, borderVerifierRef.current)
-      });
+      // Create GeoJSON layer with styling
+      const geoJsonLayer = L.geoJSON(geoJsonData, {
+        style: (feature) => {
+          const countryCode = feature.properties?.ISO_A3;
+          if (!countryCode) return { fillOpacity: 0, weight: 0 };
+          
+          return getCountryStyle(countryCode, indexData, filterState, recommendedCountries, borderVerifierRef.current);
+        },
+        onEachFeature: (feature, layer) => {
+          const countryCode = feature.properties?.ISO_A3;
+          const countryName = feature.properties?.NAME;
+          
+          if (!countryCode) return;
 
-      vectorLayerRef.current = vectorLayer;
+          // Mouse events
+          layer.on({
+            mouseover: (e) => {
+              const layer = e.target;
+              
+              // Highlight on hover
+              layer.setStyle({
+                weight: 3,
+                color: '#333333',
+                fillOpacity: 0.9
+              });
+              
+              layer.bringToFront();
+              
+              // Update hover state
+              const filteredData = applyFilters(indexData, filterState);
+              const countryData = filteredData[countryCode] || indexData[countryCode];
+              const borderValidation = borderVerifierRef.current.getCountryValidation(countryCode);
+              
+              setHoveredCountry({
+                code: countryCode,
+                name: countryName,
+                score: countryData?.compositeScore,
+                ranking: countryData?.ranking,
+                isFiltered: filterState?.hasActiveFilters && !filteredData[countryCode],
+                filteredBy: countryData?.filteredBy,
+                borderIssues: borderValidation && !borderValidation.isValid ? borderValidation.issues.length : 0
+              });
+              
+              if (onCountryHover) {
+                onCountryHover(countryCode, countryData);
+              }
+            },
+            mouseout: (e) => {
+              const layer = e.target;
+              geoJsonLayerRef.current.resetStyle(layer);
+              setHoveredCountry(null);
+              
+              if (onCountryHover) {
+                onCountryHover(null, null);
+              }
+            },
+            click: (e) => {
+              if (onCountryClick) {
+                const filteredData = applyFilters(indexData, filterState);
+                const countryData = filteredData[countryCode] || indexData[countryCode];
+                onCountryClick(countryCode, countryData);
+              }
+            }
+          });
 
-      // Create pins layer for recommendations
-      const pinsSource = new VectorSource();
-      const pinsLayer = new VectorLayer({
-        source: pinsSource,
-        style: createPinStyle
-      });
+          // Bind popup with country information
+          const filteredData = applyFilters(indexData, filterState);
+          const countryData = filteredData[countryCode] || indexData[countryCode];
+          
+          if (countryData) {
+            layer.bindPopup(`
+              <div class="p-3">
+                <h3 class="font-semibold text-gray-900 mb-2">${countryName}</h3>
+                <div class="space-y-1 text-sm">
+                  <div>Quality Score: <span class="font-medium" style="color: ${scoreToColor(countryData.compositeScore, 1)}">${countryData.compositeScore?.toFixed(1) || 'N/A'}/100</span></div>
+                  ${countryData.ranking ? `<div>Global Rank: <span class="font-medium">#${countryData.ranking.rank} of ${countryData.ranking.totalCountries}</span></div>` : ''}
+                  <div>Data Completeness: <span class="font-medium">${Math.round((countryData.dataCompleteness || 0) * 100)}%</span></div>
+                  <div>Confidence: <span class="font-medium">${Math.round((countryData.confidence || 0) * 100)}%</span></div>
+                  ${countryData.filteredBy ? `<div class="mt-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">Filtered by ${countryData.filteredBy}</div>` : ''}
+                </div>
+              </div>
+            `);
+          }
+        }
+      }).addTo(map);
 
-      pinsLayerRef.current = pinsLayer;
+      geoJsonLayerRef.current = geoJsonLayer;
 
-      // Create map instance with proper projection
-      const map = new OLMap({
-        target: mapRef.current,
-        layers: [
-          new TileLayer({
-            source: new OSM()
-          }),
-          vectorLayer,
-          pinsLayer
-        ],
-        view: new View({
-          center: fromLonLat([0, 20]), // Center on world
-          zoom: 2,
-          minZoom: 1,
-          maxZoom: 10,
-          projection: 'EPSG:3857' // Ensure view projection matches feature projection
-        })
-      });
-
-      mapInstanceRef.current = map;
-      
-      console.log('✅ Map initialized successfully');
+      console.log('✅ Leaflet map initialized successfully');
       
       // Update debug info
       setDebugInfo({
-        totalFeatures: features.length,
+        totalFeatures: geoJsonData.features.length,
         validFeatures,
         invalidFeatures,
-        projection: 'EPSG:3857',
-        viewCenter: map.getView().getCenter(),
-        viewZoom: map.getView().getZoom()
-      });
-
-      // Add interaction handlers
-      map.on('pointermove', (event) => {
-        const feature = map.forEachFeatureAtPixel(event.pixel, (feature) => feature);
-        
-        if (feature !== hoveredFeatureRef.current) {
-          // Reset previous hover
-          if (hoveredFeatureRef.current) {
-            hoveredFeatureRef.current.setStyle(undefined);
-          }
-          
-          if (feature && feature.get('ISO_A3')) {
-            // Apply hover style to country features only
-            const hoverStyle = createHoverStyle(feature, indexData, filterState, borderVerifierRef.current);
-            if (hoverStyle) {
-              feature.setStyle(hoverStyle);
-            }
-            
-            const countryCode = feature.get('ISO_A3');
-            const countryName = feature.get('NAME');
-            const filteredData = applyFilters(indexData, filterState);
-            const countryData = filteredData[countryCode] || indexData[countryCode];
-            const borderValidation = borderVerifierRef.current.getCountryValidation(countryCode);
-            
-            setHoveredCountry({
-              code: countryCode,
-              name: countryName,
-              score: countryData?.compositeScore,
-              ranking: countryData?.ranking,
-              isFiltered: filterState?.hasActiveFilters && !filteredData[countryCode],
-              filteredBy: countryData?.filteredBy,
-              borderIssues: borderValidation && !borderValidation.isValid ? borderValidation.issues.length : 0
-            });
-            
-            if (onCountryHover) {
-              onCountryHover(countryCode, countryData);
-            }
-          } else if (feature && feature.get('recommendation')) {
-            // Handle pin hover
-            const rec = feature.get('recommendation');
-            setHoveredCountry({
-              code: rec.countryCode || rec.country,
-              name: rec.country,
-              score: rec.score,
-              ranking: { rank: rec.rank },
-              isRecommendation: true,
-              matchPercentage: rec.matchPercentage
-            });
-          } else {
-            setHoveredCountry(null);
-            if (onCountryHover) {
-              onCountryHover(null, null);
-            }
-          }
-          
-          hoveredFeatureRef.current = feature;
-        }
-        
-        // Change cursor style
-        map.getTargetElement().style.cursor = feature ? 'pointer' : '';
-      });
-
-      map.on('click', (event) => {
-        const feature = map.forEachFeatureAtPixel(event.pixel, (feature) => feature);
-        
-        if (feature && onCountryClick) {
-          if (feature.get('ISO_A3')) {
-            // Country click
-            const countryCode = feature.get('ISO_A3');
-            const filteredData = applyFilters(indexData, filterState);
-            const countryData = filteredData[countryCode] || indexData[countryCode];
-            onCountryClick(countryCode, countryData);
-          } else if (feature.get('recommendation')) {
-            // Pin click
-            const rec = feature.get('recommendation');
-            onCountryClick(rec.countryCode || rec.country, rec.actualData);
-          }
-        }
+        mapLibrary: 'Leaflet.js',
+        center: map.getCenter(),
+        zoom: map.getZoom()
       });
 
       // Cleanup function
       return () => {
         if (mapInstanceRef.current) {
-          mapInstanceRef.current.setTarget(null);
+          mapInstanceRef.current.remove();
           mapInstanceRef.current = null;
         }
       };
@@ -671,34 +479,38 @@ const Map = ({
     }
   }, [geoJsonData]);
 
-  // Update map styles when index data or filters change
+  // Update map styles when data changes
   useEffect(() => {
-    if (vectorLayerRef.current && Object.keys(indexData).length > 0) {
+    if (geoJsonLayerRef.current && Object.keys(indexData).length > 0) {
       console.log('🎨 Updating map styles...');
-      const styleFunction = createCountryStyleFunction(indexData, filterState, recommendedCountries, borderVerifierRef.current);
-      vectorLayerRef.current.setStyle(styleFunction);
       
-      // Reset hover state
-      if (hoveredFeatureRef.current) {
-        hoveredFeatureRef.current.setStyle(undefined);
-        hoveredFeatureRef.current = null;
-      }
-      setHoveredCountry(null);
+      geoJsonLayerRef.current.eachLayer((layer) => {
+        const feature = layer.feature;
+        const countryCode = feature.properties?.ISO_A3;
+        
+        if (countryCode) {
+          const style = getCountryStyle(countryCode, indexData, filterState, recommendedCountries, borderVerifierRef.current);
+          layer.setStyle(style);
+        }
+      });
       
       console.log('✅ Map styles updated');
     }
   }, [indexData, filterState, recommendedCountries]);
 
-  // Update recommendation pins
+  // Update recommendation markers
   useEffect(() => {
-    if (pinsLayerRef.current && Object.keys(countryCenters).length > 0) {
-      const pinsSource = pinsLayerRef.current.getSource();
-      pinsSource.clear();
+    if (mapInstanceRef.current && Object.keys(countryCenters).length > 0) {
+      // Clear existing markers
+      recommendationMarkersRef.current.forEach(marker => {
+        mapInstanceRef.current.removeLayer(marker);
+      });
+      recommendationMarkersRef.current = [];
       
       if (recommendedCountries.length > 0) {
-        console.log('📍 Adding recommendation pins:', recommendedCountries.length);
-        const pinFeatures = createRecommendationPins(recommendedCountries, countryCenters);
-        pinsSource.addFeatures(pinFeatures);
+        console.log('📍 Adding recommendation markers:', recommendedCountries.length);
+        const markers = createRecommendationMarkers(recommendedCountries, countryCenters, mapInstanceRef.current);
+        recommendationMarkersRef.current = markers;
       }
     }
   }, [recommendedCountries, countryCenters]);
@@ -756,9 +568,9 @@ const Map = ({
           <div className="text-sm">
             <div className="font-medium text-gray-900 mb-1">Map Debug Info</div>
             <div className="text-gray-700 space-y-1">
+              <div>Library: {debugInfo.mapLibrary}</div>
               <div>Features: {debugInfo.validFeatures}/{debugInfo.totalFeatures} valid</div>
-              <div>Projection: {debugInfo.projection}</div>
-              <div>Zoom: {debugInfo.viewZoom?.toFixed(1)}</div>
+              <div>Zoom: {debugInfo.zoom?.toFixed(1)}</div>
             </div>
             {borderValidationResults && (
               <div className="mt-2 pt-2 border-t">
@@ -825,14 +637,6 @@ const Map = ({
                   <span className="text-gray-600">Global Rank:</span>
                   <span className="font-medium">
                     #{hoveredCountry.ranking.rank} of {hoveredCountry.ranking.totalCountries}
-                  </span>
-                </div>
-              )}
-              {hoveredCountry.isRecommendation && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600">AI Match:</span>
-                  <span className="font-medium text-blue-600">
-                    {hoveredCountry.matchPercentage}%
                   </span>
                 </div>
               )}
@@ -915,6 +719,14 @@ const Map = ({
           onClose={() => setShowDiagnostics(false)}
         />
       )}
+
+      {/* Custom CSS for recommendation markers */}
+      <style jsx>{`
+        .recommendation-marker {
+          background: transparent !important;
+          border: none !important;
+        }
+      `}</style>
     </div>
   );
 };
