@@ -4,7 +4,7 @@ import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
 import { OSM, Vector as VectorSource } from 'ol/source';
 import { GeoJSON } from 'ol/format';
 import { Style, Fill, Stroke, Circle, Text } from 'ol/style';
-import { fromLonLat } from 'ol/proj';
+import { fromLonLat, get as getProjection } from 'ol/proj';
 import { Point } from 'ol/geom';
 import { Feature } from 'ol';
 import { indexService } from '../api/indexService';
@@ -106,7 +106,44 @@ function scoreToColor(score, opacity = 0.8, isFiltered = false) {
 }
 
 /**
- * Create enhanced style function with border validation
+ * Validate and debug geometry
+ */
+function validateGeometry(feature, countryCode) {
+  const geometry = feature.getGeometry();
+  
+  if (!geometry) {
+    console.warn(`❌ No geometry for country: ${countryCode}`);
+    return false;
+  }
+  
+  const geometryType = geometry.getType();
+  const validTypes = ['Polygon', 'MultiPolygon'];
+  
+  if (!validTypes.includes(geometryType)) {
+    console.warn(`❌ Invalid geometry type for ${countryCode}: ${geometryType}`);
+    return false;
+  }
+  
+  // Check if geometry has coordinates
+  const coordinates = geometry.getCoordinates();
+  if (!coordinates || coordinates.length === 0) {
+    console.warn(`❌ No coordinates for country: ${countryCode}`);
+    return false;
+  }
+  
+  // Validate coordinate bounds
+  const extent = geometry.getExtent();
+  if (!extent || extent.some(coord => !isFinite(coord))) {
+    console.warn(`❌ Invalid extent for country: ${countryCode}`, extent);
+    return false;
+  }
+  
+  console.log(`✅ Valid geometry for ${countryCode}: ${geometryType}, extent:`, extent);
+  return true;
+}
+
+/**
+ * Create enhanced style function with comprehensive debugging
  */
 function createCountryStyleFunction(indexData, filterState, recommendedCountries, borderVerifier) {
   const filteredData = applyFilters(indexData, filterState);
@@ -115,8 +152,21 @@ function createCountryStyleFunction(indexData, filterState, recommendedCountries
   );
   
   return function(feature, resolution) {
+    // Get country identification
     const countryCode = feature.get('ISO_A3');
     const countryName = feature.get('NAME');
+    
+    if (!countryCode) {
+      console.warn('❌ Feature missing ISO_A3 code:', feature.getProperties());
+      return null;
+    }
+    
+    // Validate geometry before styling
+    if (!validateGeometry(feature, countryCode)) {
+      return null;
+    }
+    
+    // Get data for styling
     const countryData = filteredData[countryCode];
     const originalData = indexData[countryCode];
     const score = countryData?.compositeScore;
@@ -159,7 +209,11 @@ function createCountryStyleFunction(indexData, filterState, recommendedCountries
     const zoomLevel = getZoomLevelFromResolution(resolution);
     const adjustedStrokeWidth = strokeWidth * Math.max(0.5, Math.min(2, zoomLevel / 3));
     
-    return new Style({
+    // Debug color application
+    console.log(`🎨 Styling ${countryCode}: score=${score}, fillColor=${fillColor}, strokeColor=${strokeColor}`);
+    
+    // Create and return style
+    const style = new Style({
       fill: new Fill({
         color: fillColor
       }),
@@ -168,6 +222,8 @@ function createCountryStyleFunction(indexData, filterState, recommendedCountries
         width: adjustedStrokeWidth
       })
     });
+    
+    return style;
   };
 }
 
@@ -183,6 +239,11 @@ function getZoomLevelFromResolution(resolution) {
  */
 function createHoverStyle(feature, indexData, filterState, borderVerifier) {
   const countryCode = feature.get('ISO_A3');
+  
+  if (!validateGeometry(feature, countryCode)) {
+    return null;
+  }
+  
   const filteredData = applyFilters(indexData, filterState);
   const countryData = filteredData[countryCode] || indexData[countryCode];
   const score = countryData?.compositeScore;
@@ -270,7 +331,7 @@ function createPinStyle(feature) {
 }
 
 /**
- * Enhanced Interactive World Map Component with Border Validation
+ * Enhanced Interactive World Map Component with Comprehensive Debugging
  */
 const Map = ({ 
   selectedYear = 2020, 
@@ -296,19 +357,43 @@ const Map = ({
   const [hoveredCountry, setHoveredCountry] = useState(null);
   const [borderValidationResults, setBorderValidationResults] = useState(null);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [debugInfo, setDebugInfo] = useState({});
 
   // Load GeoJSON data and country centers on component mount
   useEffect(() => {
     const loadMapData = async () => {
       try {
         setLoading(true);
+        console.log('🔄 Loading map data...');
         
         // Load GeoJSON data
         const geoJsonResponse = await axios.get('/data/countries.geojson');
+        console.log('📊 GeoJSON loaded:', {
+          type: geoJsonResponse.data.type,
+          featureCount: geoJsonResponse.data.features?.length,
+          sampleFeature: geoJsonResponse.data.features?.[0]
+        });
+        
+        // Validate GeoJSON structure
+        if (!geoJsonResponse.data.features || !Array.isArray(geoJsonResponse.data.features)) {
+          throw new Error('Invalid GeoJSON structure: missing features array');
+        }
+        
+        // Debug first few features
+        geoJsonResponse.data.features.slice(0, 3).forEach((feature, index) => {
+          console.log(`🗺️ Feature ${index}:`, {
+            type: feature.type,
+            properties: feature.properties,
+            geometryType: feature.geometry?.type,
+            coordinatesLength: feature.geometry?.coordinates?.length
+          });
+        });
+        
         setGeoJsonData(geoJsonResponse.data);
         
         // Load country centers
         const centersResponse = await axios.get('/data/country-centers.json');
+        console.log('📍 Country centers loaded:', Object.keys(centersResponse.data).length, 'countries');
         setCountryCenters(centersResponse.data);
         
         // Run border validation
@@ -333,7 +418,7 @@ const Map = ({
         }
         
       } catch (err) {
-        console.error('Failed to load map data:', err);
+        console.error('❌ Failed to load map data:', err);
         setError('Failed to load map data. Using fallback data.');
         
         // Fallback to basic data if files can't be loaded
@@ -370,10 +455,16 @@ const Map = ({
       setError(null);
       
       try {
+        console.log(`🔄 Loading index data for year ${selectedYear} with ${weightingScheme} weighting...`);
         const data = await indexService.calculateCompositeIndex(selectedYear, weightingScheme);
+        console.log('📊 Index data loaded:', {
+          countries: Object.keys(data).length,
+          sampleCountry: Object.keys(data)[0],
+          sampleData: data[Object.keys(data)[0]]
+        });
         setIndexData(data);
       } catch (err) {
-        console.error('Failed to load index data:', err);
+        console.error('❌ Failed to load index data:', err);
         setError('Failed to load map data. Please try again.');
       } finally {
         setLoading(false);
@@ -383,140 +474,207 @@ const Map = ({
     loadIndexData();
   }, [selectedYear, weightingScheme, geoJsonData]);
 
-  // Initialize map
+  // Initialize map with enhanced debugging
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current || !geoJsonData) return;
 
-    // Create vector source and layer for countries
-    const vectorSource = new VectorSource({
-      features: new GeoJSON().readFeatures(geoJsonData, {
-        featureProjection: 'EPSG:3857'
-      })
-    });
+    console.log('🗺️ Initializing OpenLayers map...');
 
-    const vectorLayer = new VectorLayer({
-      source: vectorSource,
-      style: createCountryStyleFunction(indexData, filterState, recommendedCountries, borderVerifierRef.current)
-    });
-
-    vectorLayerRef.current = vectorLayer;
-
-    // Create pins layer for recommendations
-    const pinsSource = new VectorSource();
-    const pinsLayer = new VectorLayer({
-      source: pinsSource,
-      style: createPinStyle
-    });
-
-    pinsLayerRef.current = pinsLayer;
-
-    // Create map instance
-    const map = new OLMap({
-      target: mapRef.current,
-      layers: [
-        new TileLayer({
-          source: new OSM()
-        }),
-        vectorLayer,
-        pinsLayer
-      ],
-      view: new View({
-        center: fromLonLat([0, 20]), // Center on world
-        zoom: 2,
-        minZoom: 1,
-        maxZoom: 10
-      })
-    });
-
-    mapInstanceRef.current = map;
-
-    // Add interaction handlers
-    map.on('pointermove', (event) => {
-      const feature = map.forEachFeatureAtPixel(event.pixel, (feature) => feature);
+    try {
+      // Create GeoJSON format instance
+      const geoJsonFormat = new GeoJSON();
       
-      if (feature !== hoveredFeatureRef.current) {
-        // Reset previous hover
-        if (hoveredFeatureRef.current) {
-          hoveredFeatureRef.current.setStyle(undefined);
-        }
+      // Read features with explicit projection handling
+      console.log('🔄 Reading GeoJSON features...');
+      const features = geoJsonFormat.readFeatures(geoJsonData, {
+        dataProjection: 'EPSG:4326', // WGS84 (standard for GeoJSON)
+        featureProjection: 'EPSG:3857' // Web Mercator (standard for web maps)
+      });
+      
+      console.log('✅ Features read successfully:', {
+        totalFeatures: features.length,
+        sampleFeatureType: features[0]?.getGeometry()?.getType(),
+        sampleExtent: features[0]?.getGeometry()?.getExtent()
+      });
+      
+      // Validate each feature
+      let validFeatures = 0;
+      let invalidFeatures = 0;
+      
+      features.forEach((feature, index) => {
+        const countryCode = feature.get('ISO_A3');
+        const geometry = feature.getGeometry();
         
-        if (feature && feature.get('ISO_A3')) {
-          // Apply hover style to country features only
-          feature.setStyle(createHoverStyle(feature, indexData, filterState, borderVerifierRef.current));
-          const countryCode = feature.get('ISO_A3');
-          const countryName = feature.get('NAME');
-          const filteredData = applyFilters(indexData, filterState);
-          const countryData = filteredData[countryCode] || indexData[countryCode];
-          const borderValidation = borderVerifierRef.current.getCountryValidation(countryCode);
-          
-          setHoveredCountry({
-            code: countryCode,
-            name: countryName,
-            score: countryData?.compositeScore,
-            ranking: countryData?.ranking,
-            isFiltered: filterState?.hasActiveFilters && !filteredData[countryCode],
-            filteredBy: countryData?.filteredBy,
-            borderIssues: borderValidation && !borderValidation.isValid ? borderValidation.issues.length : 0
-          });
-          
-          if (onCountryHover) {
-            onCountryHover(countryCode, countryData);
+        if (geometry && ['Polygon', 'MultiPolygon'].includes(geometry.getType())) {
+          validFeatures++;
+          if (index < 3) { // Debug first 3 features
+            console.log(`✅ Valid feature ${index} (${countryCode}):`, {
+              type: geometry.getType(),
+              extent: geometry.getExtent(),
+              coordinates: geometry.getCoordinates().length
+            });
           }
-        } else if (feature && feature.get('recommendation')) {
-          // Handle pin hover
-          const rec = feature.get('recommendation');
-          setHoveredCountry({
-            code: rec.countryCode || rec.country,
-            name: rec.country,
-            score: rec.score,
-            ranking: { rank: rec.rank },
-            isRecommendation: true,
-            matchPercentage: rec.matchPercentage
-          });
         } else {
-          setHoveredCountry(null);
-          if (onCountryHover) {
-            onCountryHover(null, null);
+          invalidFeatures++;
+          console.warn(`❌ Invalid feature ${index} (${countryCode}):`, {
+            hasGeometry: !!geometry,
+            type: geometry?.getType()
+          });
+        }
+      });
+      
+      console.log('📊 Feature validation summary:', { validFeatures, invalidFeatures });
+      
+      // Create vector source and layer for countries
+      const vectorSource = new VectorSource({
+        features: features
+      });
+
+      const vectorLayer = new VectorLayer({
+        source: vectorSource,
+        style: createCountryStyleFunction(indexData, filterState, recommendedCountries, borderVerifierRef.current)
+      });
+
+      vectorLayerRef.current = vectorLayer;
+
+      // Create pins layer for recommendations
+      const pinsSource = new VectorSource();
+      const pinsLayer = new VectorLayer({
+        source: pinsSource,
+        style: createPinStyle
+      });
+
+      pinsLayerRef.current = pinsLayer;
+
+      // Create map instance with proper projection
+      const map = new OLMap({
+        target: mapRef.current,
+        layers: [
+          new TileLayer({
+            source: new OSM()
+          }),
+          vectorLayer,
+          pinsLayer
+        ],
+        view: new View({
+          center: fromLonLat([0, 20]), // Center on world
+          zoom: 2,
+          minZoom: 1,
+          maxZoom: 10,
+          projection: 'EPSG:3857' // Ensure view projection matches feature projection
+        })
+      });
+
+      mapInstanceRef.current = map;
+      
+      console.log('✅ Map initialized successfully');
+      
+      // Update debug info
+      setDebugInfo({
+        totalFeatures: features.length,
+        validFeatures,
+        invalidFeatures,
+        projection: 'EPSG:3857',
+        viewCenter: map.getView().getCenter(),
+        viewZoom: map.getView().getZoom()
+      });
+
+      // Add interaction handlers
+      map.on('pointermove', (event) => {
+        const feature = map.forEachFeatureAtPixel(event.pixel, (feature) => feature);
+        
+        if (feature !== hoveredFeatureRef.current) {
+          // Reset previous hover
+          if (hoveredFeatureRef.current) {
+            hoveredFeatureRef.current.setStyle(undefined);
           }
+          
+          if (feature && feature.get('ISO_A3')) {
+            // Apply hover style to country features only
+            const hoverStyle = createHoverStyle(feature, indexData, filterState, borderVerifierRef.current);
+            if (hoverStyle) {
+              feature.setStyle(hoverStyle);
+            }
+            
+            const countryCode = feature.get('ISO_A3');
+            const countryName = feature.get('NAME');
+            const filteredData = applyFilters(indexData, filterState);
+            const countryData = filteredData[countryCode] || indexData[countryCode];
+            const borderValidation = borderVerifierRef.current.getCountryValidation(countryCode);
+            
+            setHoveredCountry({
+              code: countryCode,
+              name: countryName,
+              score: countryData?.compositeScore,
+              ranking: countryData?.ranking,
+              isFiltered: filterState?.hasActiveFilters && !filteredData[countryCode],
+              filteredBy: countryData?.filteredBy,
+              borderIssues: borderValidation && !borderValidation.isValid ? borderValidation.issues.length : 0
+            });
+            
+            if (onCountryHover) {
+              onCountryHover(countryCode, countryData);
+            }
+          } else if (feature && feature.get('recommendation')) {
+            // Handle pin hover
+            const rec = feature.get('recommendation');
+            setHoveredCountry({
+              code: rec.countryCode || rec.country,
+              name: rec.country,
+              score: rec.score,
+              ranking: { rank: rec.rank },
+              isRecommendation: true,
+              matchPercentage: rec.matchPercentage
+            });
+          } else {
+            setHoveredCountry(null);
+            if (onCountryHover) {
+              onCountryHover(null, null);
+            }
+          }
+          
+          hoveredFeatureRef.current = feature;
         }
         
-        hoveredFeatureRef.current = feature;
-      }
-      
-      // Change cursor style
-      map.getTargetElement().style.cursor = feature ? 'pointer' : '';
-    });
+        // Change cursor style
+        map.getTargetElement().style.cursor = feature ? 'pointer' : '';
+      });
 
-    map.on('click', (event) => {
-      const feature = map.forEachFeatureAtPixel(event.pixel, (feature) => feature);
-      
-      if (feature && onCountryClick) {
-        if (feature.get('ISO_A3')) {
-          // Country click
-          const countryCode = feature.get('ISO_A3');
-          const filteredData = applyFilters(indexData, filterState);
-          const countryData = filteredData[countryCode] || indexData[countryCode];
-          onCountryClick(countryCode, countryData);
-        } else if (feature.get('recommendation')) {
-          // Pin click
-          const rec = feature.get('recommendation');
-          onCountryClick(rec.countryCode || rec.country, rec.actualData);
+      map.on('click', (event) => {
+        const feature = map.forEachFeatureAtPixel(event.pixel, (feature) => feature);
+        
+        if (feature && onCountryClick) {
+          if (feature.get('ISO_A3')) {
+            // Country click
+            const countryCode = feature.get('ISO_A3');
+            const filteredData = applyFilters(indexData, filterState);
+            const countryData = filteredData[countryCode] || indexData[countryCode];
+            onCountryClick(countryCode, countryData);
+          } else if (feature.get('recommendation')) {
+            // Pin click
+            const rec = feature.get('recommendation');
+            onCountryClick(rec.countryCode || rec.country, rec.actualData);
+          }
         }
-      }
-    });
+      });
 
-    // Cleanup function
-    return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.setTarget(null);
-        mapInstanceRef.current = null;
-      }
-    };
+      // Cleanup function
+      return () => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.setTarget(null);
+          mapInstanceRef.current = null;
+        }
+      };
+    } catch (error) {
+      console.error('❌ Map initialization failed:', error);
+      setError(`Map initialization failed: ${error.message}`);
+    }
   }, [geoJsonData]);
 
   // Update map styles when index data or filters change
   useEffect(() => {
     if (vectorLayerRef.current && Object.keys(indexData).length > 0) {
+      console.log('🎨 Updating map styles...');
       const styleFunction = createCountryStyleFunction(indexData, filterState, recommendedCountries, borderVerifierRef.current);
       vectorLayerRef.current.setStyle(styleFunction);
       
@@ -526,6 +684,8 @@ const Map = ({
         hoveredFeatureRef.current = null;
       }
       setHoveredCountry(null);
+      
+      console.log('✅ Map styles updated');
     }
   }, [indexData, filterState, recommendedCountries]);
 
@@ -536,6 +696,7 @@ const Map = ({
       pinsSource.clear();
       
       if (recommendedCountries.length > 0) {
+        console.log('📍 Adding recommendation pins:', recommendedCountries.length);
         const pinFeatures = createRecommendationPins(recommendedCountries, countryCenters);
         pinsSource.addFeatures(pinFeatures);
       }
@@ -589,25 +750,34 @@ const Map = ({
         </div>
       )}
       
-      {/* Border validation status */}
-      {borderValidationResults && (
+      {/* Debug info panel */}
+      {debugInfo.totalFeatures && (
         <div className="absolute top-4 left-4 bg-white p-3 rounded-lg shadow-lg border">
           <div className="text-sm">
-            <div className="font-medium text-gray-900 mb-1">Border Validation</div>
-            <div className="text-gray-700">
-              {borderValidationResults.validFeatures}/{borderValidationResults.totalFeatures} valid
-              {borderValidationResults.issues.length > 0 && (
-                <span className="text-red-600 ml-2">
-                  ({borderValidationResults.issues.length} issues)
-                </span>
-              )}
+            <div className="font-medium text-gray-900 mb-1">Map Debug Info</div>
+            <div className="text-gray-700 space-y-1">
+              <div>Features: {debugInfo.validFeatures}/{debugInfo.totalFeatures} valid</div>
+              <div>Projection: {debugInfo.projection}</div>
+              <div>Zoom: {debugInfo.viewZoom?.toFixed(1)}</div>
             </div>
-            <button
-              onClick={() => setShowDiagnostics(true)}
-              className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
-            >
-              View Details
-            </button>
+            {borderValidationResults && (
+              <div className="mt-2 pt-2 border-t">
+                <div className="text-gray-700">
+                  Border Validation: {borderValidationResults.validFeatures}/{borderValidationResults.totalFeatures} valid
+                  {borderValidationResults.issues.length > 0 && (
+                    <span className="text-red-600 ml-2">
+                      ({borderValidationResults.issues.length} issues)
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setShowDiagnostics(true)}
+                  className="mt-1 text-xs text-blue-600 hover:text-blue-800 underline"
+                >
+                  View Details
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
