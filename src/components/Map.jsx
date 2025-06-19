@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { indexService } from '../api/indexService';
 import { BorderVerifier } from '../utils/borderVerification';
 import BorderDiagnostics from './BorderDiagnostics';
+import CountryProfile from './CountryProfile';
 import axios from 'axios';
 
 // Fix for default markers in Leaflet
@@ -212,7 +213,6 @@ const Map = ({
   recommendedCountries = [],
   onCountryClick = null,
   onCountryHover = null,
-  onViewCountryProfile = null,
   className = ''
 }) => {
   const mapRef = useRef(null);
@@ -230,6 +230,8 @@ const Map = ({
   const [borderValidationResults, setBorderValidationResults] = useState(null);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [debugInfo, setDebugInfo] = useState({});
+  const [selectedCountryCode, setSelectedCountryCode] = useState(null);
+  const [showCountryProfile, setShowCountryProfile] = useState(false);
 
   // Load GeoJSON data and country centers on component mount
   useEffect(() => {
@@ -427,7 +429,10 @@ const Map = ({
               const filteredData = applyFilters(indexData, filterState);
               const countryData = filteredData[countryCode] || indexData[countryCode];
               
-              // Only trigger onCountryClick, NOT onViewCountryProfile
+              // Set selected country and show profile
+              setSelectedCountryCode(countryCode);
+              setShowCountryProfile(true);
+              
               if (onCountryClick) {
                 onCountryClick(countryCode, countryData);
               }
@@ -439,38 +444,23 @@ const Map = ({
           const countryData = filteredData[countryCode] || indexData[countryCode];
           
           if (countryData) {
-            // Create popup content with a proper button
-            const popupContent = document.createElement('div');
-            popupContent.className = 'p-3';
-            popupContent.innerHTML = `
-              <h3 class="font-semibold text-gray-900 mb-2">${countryName}</h3>
-              <div class="space-y-1 text-sm">
-                <div>Quality Score: <span class="font-medium" style="color: ${scoreToColor(countryData.compositeScore, 1)}">${countryData.compositeScore?.toFixed(1) || 'N/A'}/100</span></div>
-                ${countryData.ranking ? `<div>Global Rank: <span class="font-medium">#${countryData.ranking.rank} of ${countryData.ranking.totalCountries}</span></div>` : ''}
-                <div>Data Completeness: <span class="font-medium">${Math.round((countryData.dataCompleteness || 0) * 100)}%</span></div>
-                <div>Confidence: <span class="font-medium">${Math.round((countryData.confidence || 0) * 100)}%</span></div>
-                ${countryData.filteredBy ? `<div class="mt-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">Filtered by ${countryData.filteredBy}</div>` : ''}
+            layer.bindPopup(`
+              <div class="p-3">
+                <h3 class="font-semibold text-gray-900 mb-2">${countryName}</h3>
+                <div class="space-y-1 text-sm">
+                  <div>Quality Score: <span class="font-medium" style="color: ${scoreToColor(countryData.compositeScore, 1)}">${countryData.compositeScore?.toFixed(1) || 'N/A'}/100</span></div>
+                  ${countryData.ranking ? `<div>Global Rank: <span class="font-medium">#${countryData.ranking.rank} of ${countryData.ranking.totalCountries}</span></div>` : ''}
+                  <div>Data Completeness: <span class="font-medium">${Math.round((countryData.dataCompleteness || 0) * 100)}%</span></div>
+                  <div>Confidence: <span class="font-medium">${Math.round((countryData.confidence || 0) * 100)}%</span></div>
+                  ${countryData.filteredBy ? `<div class="mt-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">Filtered by ${countryData.filteredBy}</div>` : ''}
+                </div>
+                <div class="mt-3 pt-2 border-t">
+                  <button onclick="window.showCountryProfile('${countryCode}')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                    View Detailed Profile →
+                  </button>
+                </div>
               </div>
-              <div class="mt-3 pt-2 border-t">
-                <button id="profile-btn-${countryCode}" class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">
-                  View Detailed Profile →
-                </button>
-              </div>
-            `;
-            
-            // Bind popup
-            layer.bindPopup(popupContent);
-            
-            // Add event listener for the profile button after popup opens
-            layer.on('popupopen', () => {
-              const profileBtn = document.getElementById(`profile-btn-${countryCode}`);
-              if (profileBtn && onViewCountryProfile) {
-                profileBtn.addEventListener('click', () => {
-                  onViewCountryProfile(countryCode);
-                  map.closePopup(); // Close the popup after clicking
-                });
-              }
-            });
+            `);
           }
         }
       }).addTo(map);
@@ -501,6 +491,18 @@ const Map = ({
       setError(`Map initialization failed: ${error.message}`);
     }
   }, [geoJsonData]);
+
+  // Global function for popup buttons
+  useEffect(() => {
+    window.showCountryProfile = (countryCode) => {
+      setSelectedCountryCode(countryCode);
+      setShowCountryProfile(true);
+    };
+    
+    return () => {
+      delete window.showCountryProfile;
+    };
+  }, []);
 
   // Update map styles when data changes
   useEffect(() => {
@@ -559,6 +561,24 @@ const Map = ({
 
   const filterStats = getFilterStats();
 
+  // Show country profile if selected
+  if (showCountryProfile && selectedCountryCode) {
+    return (
+      <div className={`w-full h-full ${className}`}>
+        <CountryProfile
+          countryCode={selectedCountryCode}
+          selectedYear={selectedYear}
+          weightingScheme={weightingScheme}
+          onBack={() => {
+            setShowCountryProfile(false);
+            setSelectedCountryCode(null);
+          }}
+          className="w-full h-full"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={`relative w-full h-full ${className}`}>
       {/* Map container */}
@@ -582,6 +602,38 @@ const Map = ({
       {error && (
         <div className="absolute top-4 left-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3 max-w-sm">
           <p className="text-yellow-800 text-sm">{error}</p>
+        </div>
+      )}
+      
+      {/* Debug info panel */}
+      {debugInfo.totalFeatures && (
+        <div className="absolute top-4 left-4 bg-white p-3 rounded-lg shadow-lg border">
+          <div className="text-sm">
+            <div className="font-medium text-gray-900 mb-1">Map Debug Info</div>
+            <div className="text-gray-700 space-y-1">
+              <div>Library: {debugInfo.mapLibrary}</div>
+              <div>Features: {debugInfo.validFeatures}/{debugInfo.totalFeatures} valid</div>
+              <div>Zoom: {debugInfo.zoom?.toFixed(1)}</div>
+            </div>
+            {borderValidationResults && (
+              <div className="mt-2 pt-2 border-t">
+                <div className="text-gray-700">
+                  Border Validation: {borderValidationResults.validFeatures}/{borderValidationResults.totalFeatures} valid
+                  {borderValidationResults.issues.length > 0 && (
+                    <span className="text-red-600 ml-2">
+                      ({borderValidationResults.issues.length} issues)
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setShowDiagnostics(true)}
+                  className="mt-1 text-xs text-blue-600 hover:text-blue-800 underline"
+                >
+                  View Details
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
       
@@ -645,7 +697,7 @@ const Map = ({
                 </div>
               )}
               <div className="mt-2 pt-2 border-t text-xs text-gray-500">
-                Click for tooltip • "View Detailed Profile" for full analysis
+                Click to view detailed profile
               </div>
             </div>
           ) : (
