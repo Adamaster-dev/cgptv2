@@ -229,7 +229,6 @@ const Map = ({
   const [hoveredCountry, setHoveredCountry] = useState(null);
   const [borderValidationResults, setBorderValidationResults] = useState(null);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
-  const [debugInfo, setDebugInfo] = useState({});
   const [selectedCountryCode, setSelectedCountryCode] = useState(null);
   const [showCountryProfile, setShowCountryProfile] = useState(false);
 
@@ -468,16 +467,6 @@ const Map = ({
       geoJsonLayerRef.current = geoJsonLayer;
 
       console.log('✅ Leaflet map initialized successfully');
-      
-      // Update debug info
-      setDebugInfo({
-        totalFeatures: geoJsonData.features.length,
-        validFeatures,
-        invalidFeatures,
-        mapLibrary: 'Leaflet.js',
-        center: map.getCenter(),
-        zoom: map.getZoom()
-      });
 
       // Cleanup function
       return () => {
@@ -602,38 +591,6 @@ const Map = ({
       {error && (
         <div className="absolute top-4 left-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3 max-w-sm">
           <p className="text-yellow-800 text-sm">{error}</p>
-        </div>
-      )}
-      
-      {/* Debug info panel */}
-      {debugInfo.totalFeatures && (
-        <div className="absolute top-4 left-4 bg-white p-3 rounded-lg shadow-lg border">
-          <div className="text-sm">
-            <div className="font-medium text-gray-900 mb-1">Map Debug Info</div>
-            <div className="text-gray-700 space-y-1">
-              <div>Library: {debugInfo.mapLibrary}</div>
-              <div>Features: {debugInfo.validFeatures}/{debugInfo.totalFeatures} valid</div>
-              <div>Zoom: {debugInfo.zoom?.toFixed(1)}</div>
-            </div>
-            {borderValidationResults && (
-              <div className="mt-2 pt-2 border-t">
-                <div className="text-gray-700">
-                  Border Validation: {borderValidationResults.validFeatures}/{borderValidationResults.totalFeatures} valid
-                  {borderValidationResults.issues.length > 0 && (
-                    <span className="text-red-600 ml-2">
-                      ({borderValidationResults.issues.length} issues)
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={() => setShowDiagnostics(true)}
-                  className="mt-1 text-xs text-blue-600 hover:text-blue-800 underline"
-                >
-                  View Details
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       )}
       
