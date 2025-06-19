@@ -17,12 +17,18 @@ import {
   Share2,
   Target,
   Award,
-  Zap
+  Zap,
+  Map,
+  Layers,
+  ChevronDown,
+  ChevronUp,
+  Filter,
+  Search
 } from 'lucide-react';
 import { indexService } from '../api/indexService';
 
 /**
- * Country Profile Component - Enhanced with detailed component score visualization
+ * Country Profile Component - Enhanced with state/province layer support
  */
 const CountryProfile = ({
   countryCode,
@@ -38,6 +44,14 @@ const CountryProfile = ({
   const [historicalData, setHistoricalData] = useState({});
   const [comparisonData, setComparisonData] = useState(null);
   const [componentScores, setComponentScores] = useState({});
+  
+  // State/Province layer state
+  const [showSubRegional, setShowSubRegional] = useState(false);
+  const [subRegionalData, setSubRegionalData] = useState({});
+  const [loadingSubRegional, setLoadingSubRegional] = useState(false);
+  const [selectedSubRegion, setSelectedSubRegion] = useState(null);
+  const [subRegionalFilter, setSubRegionalFilter] = useState('');
+  const [subRegionalSort, setSubRegionalSort] = useState('name');
 
   // Load country data and component scores
   useEffect(() => {
@@ -110,6 +124,90 @@ const CountryProfile = ({
 
     loadCountryData();
   }, [countryCode, selectedYear, weightingScheme]);
+
+  // Load sub-regional data when toggle is enabled
+  useEffect(() => {
+    const loadSubRegionalData = async () => {
+      if (!showSubRegional || !countryCode) return;
+      
+      setLoadingSubRegional(true);
+      
+      try {
+        // Generate mock sub-regional data for demonstration
+        // In production, this would fetch real state/province data
+        const subRegions = await generateMockSubRegionalData(countryCode, selectedYear, weightingScheme);
+        setSubRegionalData(subRegions);
+      } catch (err) {
+        console.error('Failed to load sub-regional data:', err);
+      } finally {
+        setLoadingSubRegional(false);
+      }
+    };
+
+    loadSubRegionalData();
+  }, [showSubRegional, countryCode, selectedYear, weightingScheme]);
+
+  // Generate mock sub-regional data
+  const generateMockSubRegionalData = async (country, year, scheme) => {
+    // Mock state/province data based on country
+    const subRegionNames = getSubRegionNames(country);
+    const subRegions = {};
+    
+    subRegionNames.forEach(name => {
+      const baseScore = countryData?.compositeScore || 50;
+      const variation = (Math.random() - 0.5) * 30; // ±15 point variation
+      const score = Math.max(0, Math.min(100, baseScore + variation));
+      
+      subRegions[name] = {
+        name,
+        compositeScore: score,
+        population: Math.floor(Math.random() * 10000000) + 100000,
+        area: Math.floor(Math.random() * 100000) + 1000,
+        componentScores: Object.keys(componentScores).reduce((acc, criterion) => {
+          const baseComponentScore = componentScores[criterion]?.score || 50;
+          const componentVariation = (Math.random() - 0.5) * 20;
+          acc[criterion] = {
+            score: Math.max(0, Math.min(100, baseComponentScore + componentVariation)),
+            rawValue: componentScores[criterion]?.rawValue * (0.8 + Math.random() * 0.4),
+            confidence: 0.7 + Math.random() * 0.2
+          };
+          return acc;
+        }, {}),
+        ranking: {
+          rank: 0, // Will be calculated
+          totalSubRegions: subRegionNames.length
+        },
+        lastUpdated: new Date().toISOString()
+      };
+    });
+    
+    // Calculate rankings
+    const sortedRegions = Object.entries(subRegions)
+      .sort(([, a], [, b]) => b.compositeScore - a.compositeScore);
+    
+    sortedRegions.forEach(([name], index) => {
+      subRegions[name].ranking.rank = index + 1;
+    });
+    
+    return subRegions;
+  };
+
+  // Get sub-region names based on country
+  const getSubRegionNames = (country) => {
+    const subRegionMap = {
+      'USA': ['California', 'Texas', 'Florida', 'New York', 'Pennsylvania', 'Illinois', 'Ohio', 'Georgia', 'North Carolina', 'Michigan'],
+      'CAN': ['Ontario', 'Quebec', 'British Columbia', 'Alberta', 'Manitoba', 'Saskatchewan', 'Nova Scotia', 'New Brunswick', 'Newfoundland and Labrador', 'Prince Edward Island'],
+      'DEU': ['Bavaria', 'Baden-Württemberg', 'North Rhine-Westphalia', 'Hesse', 'Saxony', 'Lower Saxony', 'Rhineland-Palatinate', 'Schleswig-Holstein', 'Brandenburg', 'Saxony-Anhalt'],
+      'FRA': ['Île-de-France', 'Auvergne-Rhône-Alpes', 'Hauts-de-France', 'Nouvelle-Aquitaine', 'Occitanie', 'Grand Est', 'Provence-Alpes-Côte d\'Azur', 'Pays de la Loire', 'Normandy', 'Brittany'],
+      'GBR': ['England', 'Scotland', 'Wales', 'Northern Ireland'],
+      'AUS': ['New South Wales', 'Victoria', 'Queensland', 'Western Australia', 'South Australia', 'Tasmania', 'Australian Capital Territory', 'Northern Territory'],
+      'BRA': ['São Paulo', 'Rio de Janeiro', 'Minas Gerais', 'Bahia', 'Paraná', 'Rio Grande do Sul', 'Pernambuco', 'Ceará', 'Pará', 'Santa Catarina'],
+      'IND': ['Maharashtra', 'Uttar Pradesh', 'Bihar', 'West Bengal', 'Madhya Pradesh', 'Tamil Nadu', 'Rajasthan', 'Karnataka', 'Gujarat', 'Andhra Pradesh'],
+      'CHN': ['Guangdong', 'Shandong', 'Henan', 'Sichuan', 'Jiangsu', 'Hebei', 'Hunan', 'Anhui', 'Hubei', 'Zhejiang']
+    };
+    
+    return subRegionMap[country] || ['Region 1', 'Region 2', 'Region 3', 'Region 4', 'Region 5'];
+  };
 
   // Helper functions
   const calculatePercentileRank = (score) => {
@@ -187,6 +285,34 @@ const CountryProfile = ({
     }
   };
 
+  // Filter and sort sub-regional data
+  const getFilteredAndSortedSubRegions = () => {
+    let regions = Object.entries(subRegionalData);
+    
+    // Apply filter
+    if (subRegionalFilter) {
+      regions = regions.filter(([name, data]) => 
+        name.toLowerCase().includes(subRegionalFilter.toLowerCase())
+      );
+    }
+    
+    // Apply sort
+    regions.sort(([nameA, dataA], [nameB, dataB]) => {
+      switch (subRegionalSort) {
+        case 'score':
+          return dataB.compositeScore - dataA.compositeScore;
+        case 'population':
+          return dataB.population - dataA.population;
+        case 'area':
+          return dataB.area - dataA.area;
+        default: // name
+          return nameA.localeCompare(nameB);
+      }
+    });
+    
+    return regions;
+  };
+
   const renderComponentScoreChart = (criterion, data) => {
     const score = data.score;
     const maxScore = 100;
@@ -253,6 +379,210 @@ const CountryProfile = ({
             </div>
           </div>
         </div>
+      </div>
+    );
+  };
+
+  const renderSubRegionalLayer = () => {
+    if (!showSubRegional) return null;
+
+    const filteredRegions = getFilteredAndSortedSubRegions();
+
+    return (
+      <div className="bg-white border rounded-xl p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+            <Layers className="w-5 h-5" />
+            <span>Sub-Regional Analysis</span>
+            {loadingSubRegional && (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            )}
+          </h3>
+          
+          <div className="flex items-center space-x-4">
+            {/* Search filter */}
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Filter regions..."
+                value={subRegionalFilter}
+                onChange={(e) => setSubRegionalFilter(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            
+            {/* Sort selector */}
+            <select
+              value={subRegionalSort}
+              onChange={(e) => setSubRegionalSort(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="name">Sort by Name</option>
+              <option value="score">Sort by Score</option>
+              <option value="population">Sort by Population</option>
+              <option value="area">Sort by Area</option>
+            </select>
+          </div>
+        </div>
+
+        {loadingSubRegional ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading sub-regional data...</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Summary stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="text-sm text-blue-600 font-medium">Total Regions</div>
+                <div className="text-2xl font-bold text-blue-900">{Object.keys(subRegionalData).length}</div>
+              </div>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="text-sm text-green-600 font-medium">Avg Score</div>
+                <div className="text-2xl font-bold text-green-900">
+                  {Object.values(subRegionalData).length > 0 
+                    ? (Object.values(subRegionalData).reduce((sum, region) => sum + region.compositeScore, 0) / Object.values(subRegionalData).length).toFixed(1)
+                    : 'N/A'
+                  }
+                </div>
+              </div>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="text-sm text-yellow-600 font-medium">Best Region</div>
+                <div className="text-lg font-bold text-yellow-900">
+                  {filteredRegions.length > 0 ? filteredRegions[0][0] : 'N/A'}
+                </div>
+              </div>
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <div className="text-sm text-purple-600 font-medium">Score Range</div>
+                <div className="text-lg font-bold text-purple-900">
+                  {filteredRegions.length > 0 
+                    ? `${Math.min(...filteredRegions.map(([, data]) => data.compositeScore)).toFixed(1)} - ${Math.max(...filteredRegions.map(([, data]) => data.compositeScore)).toFixed(1)}`
+                    : 'N/A'
+                  }
+                </div>
+              </div>
+            </div>
+
+            {/* Sub-regional data table */}
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Region</th>
+                    <th className="text-center py-3 px-4 font-semibold text-gray-900">Score</th>
+                    <th className="text-center py-3 px-4 font-semibold text-gray-900">Rank</th>
+                    <th className="text-center py-3 px-4 font-semibold text-gray-900">Population</th>
+                    <th className="text-center py-3 px-4 font-semibold text-gray-900">Area (km²)</th>
+                    <th className="text-center py-3 px-4 font-semibold text-gray-900">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRegions.map(([name, data]) => (
+                    <tr 
+                      key={name} 
+                      className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                        selectedSubRegion === name ? 'bg-blue-50 border-blue-200' : ''
+                      }`}
+                    >
+                      <td className="py-4 px-4">
+                        <div className="font-medium text-gray-900">{name}</div>
+                        <div className="text-sm text-gray-500">
+                          {getPerformanceLevel(data.compositeScore).level} performance
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <div className="flex items-center justify-center space-x-2">
+                          {getScoreIcon(data.compositeScore)}
+                          <span className="font-bold text-lg">{data.compositeScore.toFixed(1)}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          data.ranking.rank === 1 ? 'bg-yellow-100 text-yellow-800' :
+                          data.ranking.rank <= 3 ? 'bg-green-100 text-green-800' :
+                          data.ranking.rank <= 5 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          #{data.ranking.rank}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <span className="text-gray-700">{data.population.toLocaleString()}</span>
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <span className="text-gray-700">{data.area.toLocaleString()}</span>
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <button
+                          onClick={() => setSelectedSubRegion(selectedSubRegion === name ? null : name)}
+                          className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                        >
+                          {selectedSubRegion === name ? 'Hide' : 'Details'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Selected sub-region details */}
+            {selectedSubRegion && subRegionalData[selectedSubRegion] && (
+              <div className="mt-6 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="text-lg font-semibold text-blue-900 mb-4">
+                  {selectedSubRegion} - Detailed Analysis
+                </h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Object.entries(subRegionalData[selectedSubRegion].componentScores).map(([criterion, data]) => (
+                    <div key={criterion} className="bg-white p-4 rounded-lg border">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <span className="text-lg">{getCriterionIcon(criterion)}</span>
+                        <div>
+                          <div className="font-medium text-gray-900 text-sm">
+                            {componentScores[criterion]?.description || criterion}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {componentScores[criterion]?.category}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Score:</span>
+                          <span className="font-bold">{data.score.toFixed(1)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Raw Value:</span>
+                          <span className="text-sm">{data.rawValue?.toFixed(2) || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Confidence:</span>
+                          <span className="text-sm">{Math.round(data.confidence * 100)}%</span>
+                        </div>
+                        
+                        {/* Score bar */}
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all duration-500 ${
+                              data.score >= 80 ? 'bg-green-500' :
+                              data.score >= 60 ? 'bg-blue-500' :
+                              data.score >= 40 ? 'bg-yellow-500' :
+                              data.score >= 20 ? 'bg-orange-500' : 'bg-red-500'
+                            }`}
+                            style={{ width: `${data.score}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     );
   };
@@ -384,6 +714,44 @@ const CountryProfile = ({
         </div>
       </div>
 
+      {/* Sub-Regional Layer Toggle */}
+      <div className="bg-white border rounded-xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <Map className="w-5 h-5 text-gray-600" />
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Sub-Regional Analysis</h3>
+              <p className="text-sm text-gray-600">
+                View detailed data for states, provinces, or regions within {countryCode}
+              </p>
+            </div>
+          </div>
+          
+          <button
+            onClick={() => setShowSubRegional(!showSubRegional)}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+              showSubRegional 
+                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>{showSubRegional ? 'Hide' : 'Show'} Sub-Regions</span>
+            {showSubRegional ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+        </div>
+        
+        {showSubRegional && (
+          <div className="pt-4 border-t">
+            <div className="text-sm text-gray-600 mb-4">
+              Sub-regional data provides insights into quality of living variations within {countryCode}. 
+              This modular system can be extended to include additional criteria and administrative levels.
+            </div>
+            {renderSubRegionalLayer()}
+          </div>
+        )}
+      </div>
+
       {/* Component Scores Visual Grid */}
       <div className="bg-white border rounded-xl p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center space-x-2">
@@ -459,6 +827,9 @@ const CountryProfile = ({
         </h3>
         {renderComponentScoreTable()}
       </div>
+
+      {/* Sub-Regional Layer in Detailed View */}
+      {showSubRegional && renderSubRegionalLayer()}
 
       {/* Performance Distribution */}
       <div className="bg-white border rounded-xl p-6">
@@ -732,6 +1103,12 @@ const CountryProfile = ({
                   <Info className="w-4 h-4" />
                   <span>{Math.round(countryData.confidence * 100)}% confidence</span>
                 </div>
+                {showSubRegional && (
+                  <div className="flex items-center space-x-1">
+                    <Layers className="w-4 h-4" />
+                    <span>Sub-regional view active</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

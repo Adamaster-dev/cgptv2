@@ -14,7 +14,7 @@
 - `src/components/Timeline.jsx` – React component for the decade slider (2000–2100) with clickable year markers and data confidence indicators that updates map data on change
 - `src/components/Filters.jsx` – React component handling checkboxes and threshold inputs for individual scenario filtering with collapsible interface, criteria selection, and score thresholds
 - `src/components/QueryBox.jsx` – React component for open-text input, sending queries to the LLM and displaying recommendations with explanations, sample queries, and query history
-- `src/components/CountryProfile.jsx` – React component displaying detailed criterion data for selected country with comprehensive breakdown, historical trends, global comparison, analysis insights, enhanced component score visualization with circular charts, detailed tables, performance distribution analysis, and trend indicators
+- `src/components/CountryProfile.jsx` – React component displaying detailed criterion data for selected country with comprehensive breakdown, historical trends, global comparison, analysis insights, enhanced component score visualization with circular charts, detailed tables, performance distribution analysis, trend indicators, and modular state/province layer system with sub-regional data display, filtering, sorting, and extensible architecture for future criteria additions
 - `src/api/llmService.js` – Module interfacing with GPT-4 API for natural-language preference processing and explanation breakdowns with caching and error handling
 - `src/styles/map.css` – Comprehensive CSS for map styling, controls, tooltips, legend, and responsive design
 - `src/styles/timeline.css` – CSS for timeline component styling including custom slider, controls, animations, and responsive design
@@ -67,7 +67,7 @@
 - [x] 5.0 Create country profile pages showing detailed criteria breakdown at country and state levels  
   - [x] 5.1 Implement click handler in `Map.jsx` to navigate to `CountryProfile.jsx` with selected country code[^2].  
   - [x] 5.2 In `CountryProfile.jsx`, fetch component scores for the latest selected year and render charts or tables for each criterion[^2].  
-  - [ ] 5.3 Add state/province layer toggle to display sub-regional data when available, ensuring modular extension for future criteria additions[^2].  
+  - [x] 5.3 Add state/province layer toggle to display sub-regional data when available, ensuring modular extension for future criteria additions[^2].  
 
 - [ ] 6.0 Add bookmarking functionality and advanced threshold-based filtering (nice-to-have)  
   - [ ] 6.1 Implement bookmark save/load in `storage.js` storing map state and filters in `localStorage`[^2].  
