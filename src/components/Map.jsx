@@ -691,49 +691,51 @@ const Map = ({
         </div>
       )}
       
-      {/* Enhanced Legend */}
-      <div className="absolute bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg">
-        <h4 className="font-semibold text-gray-900 mb-3 text-sm">Quality of Living Index</h4>
-        <div className="space-y-2">
+      {/* Compact Legend - Always Visible */}
+      <div className="absolute bottom-3 right-3 bg-white rounded-lg shadow-lg border border-gray-200 p-3 max-w-xs">
+        <h4 className="font-medium text-gray-900 mb-2 text-xs">Quality Index</h4>
+        <div className="space-y-1.5">
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: scoreToColor(90) }}></div>
-            <span className="text-xs text-gray-600">Excellent (80-100)</span>
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: scoreToColor(90) }}></div>
+            <span className="text-xs text-gray-600">Excellent (80+)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: scoreToColor(70) }}></div>
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: scoreToColor(70) }}></div>
             <span className="text-xs text-gray-600">Good (60-80)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: scoreToColor(50) }}></div>
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: scoreToColor(50) }}></div>
             <span className="text-xs text-gray-600">Average (40-60)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: scoreToColor(30) }}></div>
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: scoreToColor(30) }}></div>
             <span className="text-xs text-gray-600">Poor (20-40)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: scoreToColor(10) }}></div>
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: scoreToColor(10) }}></div>
             <span className="text-xs text-gray-600">Critical (0-20)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded bg-gray-300"></div>
+            <div className="w-3 h-3 rounded-sm bg-gray-300"></div>
             <span className="text-xs text-gray-600">No Data</span>
           </div>
+          
+          {/* Additional legend items when applicable */}
           {filterStats && (
-            <div className="flex items-center space-x-2 pt-2 border-t">
-              <div className="w-4 h-4 rounded bg-gray-200"></div>
+            <div className="flex items-center space-x-2 pt-1 border-t border-gray-200">
+              <div className="w-3 h-3 rounded-sm bg-gray-200"></div>
               <span className="text-xs text-gray-600">Filtered Out</span>
             </div>
           )}
           {recommendedCountries.length > 0 && (
-            <div className="flex items-center space-x-2 pt-2 border-t">
-              <div className="w-4 h-4 rounded-full bg-blue-600 border-2 border-white"></div>
+            <div className="flex items-center space-x-2 pt-1 border-t border-gray-200">
+              <div className="w-3 h-3 rounded-full bg-blue-600 border border-white"></div>
               <span className="text-xs text-gray-600">AI Recommended</span>
             </div>
           )}
           {borderValidationResults && borderValidationResults.issues.length > 0 && (
-            <div className="flex items-center space-x-2 pt-2 border-t">
-              <div className="w-4 h-4 rounded border-2 border-red-600"></div>
+            <div className="flex items-center space-x-2 pt-1 border-t border-gray-200">
+              <div className="w-3 h-3 rounded-sm border-2 border-red-600 bg-transparent"></div>
               <span className="text-xs text-gray-600">Border Issues</span>
             </div>
           )}
