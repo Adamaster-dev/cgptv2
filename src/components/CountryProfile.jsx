@@ -14,12 +14,15 @@ import {
   CheckCircle,
   Star,
   Download,
-  Share2
+  Share2,
+  Target,
+  Award,
+  Zap
 } from 'lucide-react';
 import { indexService } from '../api/indexService';
 
 /**
- * Country Profile Component - Detailed criteria breakdown
+ * Country Profile Component - Enhanced with detailed component score visualization
  */
 const CountryProfile = ({
   countryCode,
@@ -34,8 +37,9 @@ const CountryProfile = ({
   const [activeTab, setActiveTab] = useState('overview');
   const [historicalData, setHistoricalData] = useState({});
   const [comparisonData, setComparisonData] = useState(null);
+  const [componentScores, setComponentScores] = useState({});
 
-  // Load country data
+  // Load country data and component scores
   useEffect(() => {
     const loadCountryData = async () => {
       if (!countryCode) return;
@@ -52,6 +56,18 @@ const CountryProfile = ({
         }
         
         setCountryData(breakdown);
+        
+        // Extract and enhance component scores
+        const enhancedComponentScores = {};
+        Object.entries(breakdown.componentScores || {}).forEach(([criterion, data]) => {
+          enhancedComponentScores[criterion] = {
+            ...data,
+            percentileRank: calculatePercentileRank(data.score),
+            performanceLevel: getPerformanceLevel(data.score),
+            trendDirection: 'stable' // Will be updated with historical data
+          };
+        });
+        setComponentScores(enhancedComponentScores);
         
         // Load historical data for trends
         const years = [2000, 2010, 2020, 2030, 2040, 2050];
@@ -70,6 +86,16 @@ const CountryProfile = ({
         
         setHistoricalData(historical);
         
+        // Update trend directions based on historical data
+        if (Object.keys(historical).length > 1) {
+          const updatedScores = { ...enhancedComponentScores };
+          Object.keys(updatedScores).forEach(criterion => {
+            const trend = calculateTrendDirection(criterion, historical, selectedYear);
+            updatedScores[criterion].trendDirection = trend;
+          });
+          setComponentScores(updatedScores);
+        }
+        
         // Get comparison data (top 5 countries for context)
         const rankings = await indexService.getCountryRankings(selectedYear, weightingScheme, 5);
         setComparisonData(rankings);
@@ -84,6 +110,43 @@ const CountryProfile = ({
 
     loadCountryData();
   }, [countryCode, selectedYear, weightingScheme]);
+
+  // Helper functions
+  const calculatePercentileRank = (score) => {
+    // Simplified percentile calculation - in production this would use global data
+    if (score >= 90) return 95;
+    if (score >= 80) return 85;
+    if (score >= 70) return 70;
+    if (score >= 60) return 55;
+    if (score >= 50) return 40;
+    if (score >= 40) return 25;
+    if (score >= 30) return 15;
+    return 5;
+  };
+
+  const getPerformanceLevel = (score) => {
+    if (score >= 80) return { level: 'Excellent', color: 'green' };
+    if (score >= 60) return { level: 'Good', color: 'blue' };
+    if (score >= 40) return { level: 'Average', color: 'yellow' };
+    if (score >= 20) return { level: 'Poor', color: 'orange' };
+    return { level: 'Critical', color: 'red' };
+  };
+
+  const calculateTrendDirection = (criterion, historical, currentYear) => {
+    const years = Object.keys(historical).map(Number).sort();
+    const currentIndex = years.indexOf(currentYear);
+    
+    if (currentIndex <= 0) return 'stable';
+    
+    const currentScore = historical[currentYear]?.componentScores?.[criterion]?.score;
+    const previousScore = historical[years[currentIndex - 1]]?.componentScores?.[criterion]?.score;
+    
+    if (!currentScore || !previousScore) return 'stable';
+    
+    const diff = currentScore - previousScore;
+    if (Math.abs(diff) < 2) return 'stable';
+    return diff > 0 ? 'improving' : 'declining';
+  };
 
   const getCriterionIcon = (criterion) => {
     const iconMap = {
@@ -113,13 +176,151 @@ const CountryProfile = ({
     return <AlertTriangle className="w-4 h-4 text-red-600" />;
   };
 
-  const getTrendIcon = (current, previous) => {
-    if (!previous) return null;
-    const diff = current - previous;
-    if (Math.abs(diff) < 1) return <Activity className="w-4 h-4 text-gray-400" />;
-    return diff > 0 ? 
-      <TrendingUp className="w-4 h-4 text-green-600" /> : 
-      <TrendingDown className="w-4 h-4 text-red-600" />;
+  const getTrendIcon = (direction) => {
+    switch (direction) {
+      case 'improving':
+        return <TrendingUp className="w-4 h-4 text-green-600" />;
+      case 'declining':
+        return <TrendingDown className="w-4 h-4 text-red-600" />;
+      default:
+        return <Activity className="w-4 h-4 text-gray-400" />;
+    }
+  };
+
+  const renderComponentScoreChart = (criterion, data) => {
+    const score = data.score;
+    const maxScore = 100;
+    const percentage = (score / maxScore) * 100;
+    
+    return (
+      <div className="relative">
+        {/* Circular progress chart */}
+        <div className="relative w-24 h-24 mx-auto mb-4">
+          <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+            {/* Background circle */}
+            <circle
+              cx="50"
+              cy="50"
+              r="40"
+              stroke="#e5e7eb"
+              strokeWidth="8"
+              fill="none"
+            />
+            {/* Progress circle */}
+            <circle
+              cx="50"
+              cy="50"
+              r="40"
+              stroke={score >= 80 ? '#10b981' : score >= 60 ? '#3b82f6' : score >= 40 ? '#f59e0b' : score >= 20 ? '#f97316' : '#ef4444'}
+              strokeWidth="8"
+              fill="none"
+              strokeDasharray={`${percentage * 2.51} 251`}
+              strokeLinecap="round"
+              className="transition-all duration-1000 ease-out"
+            />
+          </svg>
+          {/* Score text */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-lg font-bold text-gray-900">{score.toFixed(1)}</div>
+              <div className="text-xs text-gray-500">/ 100</div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Performance indicators */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">Percentile:</span>
+            <span className="font-medium">{data.percentileRank}th</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">Level:</span>
+            <span className={`font-medium ${
+              data.performanceLevel.color === 'green' ? 'text-green-600' :
+              data.performanceLevel.color === 'blue' ? 'text-blue-600' :
+              data.performanceLevel.color === 'yellow' ? 'text-yellow-600' :
+              data.performanceLevel.color === 'orange' ? 'text-orange-600' : 'text-red-600'
+            }`}>
+              {data.performanceLevel.level}
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">Trend:</span>
+            <div className="flex items-center space-x-1">
+              {getTrendIcon(data.trendDirection)}
+              <span className="font-medium capitalize">{data.trendDirection}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderComponentScoreTable = () => {
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="border-b border-gray-200">
+              <th className="text-left py-3 px-4 font-semibold text-gray-900">Criterion</th>
+              <th className="text-center py-3 px-4 font-semibold text-gray-900">Score</th>
+              <th className="text-center py-3 px-4 font-semibold text-gray-900">Raw Value</th>
+              <th className="text-center py-3 px-4 font-semibold text-gray-900">Percentile</th>
+              <th className="text-center py-3 px-4 font-semibold text-gray-900">Performance</th>
+              <th className="text-center py-3 px-4 font-semibold text-gray-900">Trend</th>
+              <th className="text-center py-3 px-4 font-semibold text-gray-900">Weight</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(componentScores).map(([criterion, data]) => (
+              <tr key={criterion} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                <td className="py-4 px-4">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl">{getCriterionIcon(criterion)}</span>
+                    <div>
+                      <div className="font-medium text-gray-900">{data.description}</div>
+                      <div className="text-sm text-gray-500">{data.category}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="py-4 px-4 text-center">
+                  <div className="flex items-center justify-center space-x-2">
+                    {getScoreIcon(data.score)}
+                    <span className="font-bold text-lg">{data.score.toFixed(1)}</span>
+                  </div>
+                </td>
+                <td className="py-4 px-4 text-center">
+                  <span className="text-gray-700">{data.rawValue?.toLocaleString() || 'N/A'}</span>
+                </td>
+                <td className="py-4 px-4 text-center">
+                  <span className="font-medium">{data.percentileRank}th</span>
+                </td>
+                <td className="py-4 px-4 text-center">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    data.performanceLevel.color === 'green' ? 'bg-green-100 text-green-800' :
+                    data.performanceLevel.color === 'blue' ? 'bg-blue-100 text-blue-800' :
+                    data.performanceLevel.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
+                    data.performanceLevel.color === 'orange' ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {data.performanceLevel.level}
+                  </span>
+                </td>
+                <td className="py-4 px-4 text-center">
+                  <div className="flex items-center justify-center space-x-1">
+                    {getTrendIcon(data.trendDirection)}
+                    <span className="text-sm capitalize">{data.trendDirection}</span>
+                  </div>
+                </td>
+                <td className="py-4 px-4 text-center">
+                  <span className="font-medium">{data.weight.toFixed(1)}x</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
   };
 
   const renderOverviewTab = () => (
@@ -149,7 +350,7 @@ const CountryProfile = ({
         <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
           <div className="flex items-center space-x-3 mb-4">
             <div className="p-2 bg-green-600 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-white" />
+              <Award className="w-6 h-6 text-white" />
             </div>
             <div>
               <h3 className="font-semibold text-green-900">Strengths</h3>
@@ -167,10 +368,10 @@ const CountryProfile = ({
         <div className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 rounded-xl p-6">
           <div className="flex items-center space-x-3 mb-4">
             <div className="p-2 bg-orange-600 rounded-lg">
-              <AlertTriangle className="w-6 h-6 text-white" />
+              <Target className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="font-semibold text-orange-900">Areas of Concern</h3>
+              <h3 className="font-semibold text-orange-900">Areas for Improvement</h3>
               <p className="text-sm text-orange-700">Needs attention</p>
             </div>
           </div>
@@ -183,7 +384,26 @@ const CountryProfile = ({
         </div>
       </div>
 
-      {/* Category Breakdown */}
+      {/* Component Scores Visual Grid */}
+      <div className="bg-white border rounded-xl p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center space-x-2">
+          <BarChart3 className="w-5 h-5" />
+          <span>Component Score Breakdown</span>
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {Object.entries(componentScores).map(([criterion, data]) => (
+            <div key={criterion} className={`p-4 rounded-lg border ${getCriterionColor(data.score)}`}>
+              <div className="text-center">
+                <div className="text-3xl mb-2">{getCriterionIcon(criterion)}</div>
+                <h4 className="font-medium text-sm mb-4">{data.description}</h4>
+                {renderComponentScoreChart(criterion, data)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Category Performance */}
       <div className="bg-white border rounded-xl p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
           <PieChart className="w-5 h-5" />
@@ -201,7 +421,7 @@ const CountryProfile = ({
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
-                  className="h-2 rounded-full bg-current opacity-60"
+                  className="h-2 rounded-full bg-current opacity-60 transition-all duration-1000"
                   style={{ width: `${score}%` }}
                 />
               </div>
@@ -214,7 +434,7 @@ const CountryProfile = ({
       {countryData.analysis.recommendations.length > 0 && (
         <div className="bg-white border rounded-xl p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-            <Info className="w-5 h-5" />
+            <Zap className="w-5 h-5" />
             <span>Key Insights</span>
           </h3>
           <div className="space-y-3">
@@ -231,76 +451,63 @@ const CountryProfile = ({
 
   const renderDetailedTab = () => (
     <div className="space-y-6">
-      {/* Individual Criteria */}
+      {/* Detailed Component Scores Table */}
       <div className="bg-white border rounded-xl p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center space-x-2">
           <BarChart3 className="w-5 h-5" />
-          <span>Detailed Criteria Breakdown</span>
+          <span>Detailed Component Analysis</span>
         </h3>
-        <div className="space-y-4">
-          {Object.entries(countryData.componentScores).map(([criterion, data]) => {
-            const previousScore = historicalData[2010]?.componentScores?.[criterion]?.score;
-            
-            return (
-              <div key={criterion} className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">{getCriterionIcon(criterion)}</span>
-                    <div>
-                      <h4 className="font-medium text-gray-900">{data.description}</h4>
-                      <p className="text-sm text-gray-600">{data.category}</p>
+        {renderComponentScoreTable()}
+      </div>
+
+      {/* Performance Distribution */}
+      <div className="bg-white border rounded-xl p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Performance Distribution</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Score distribution chart */}
+          <div>
+            <h4 className="font-medium text-gray-900 mb-4">Score Distribution</h4>
+            <div className="space-y-3">
+              {[
+                { range: '80-100', label: 'Excellent', count: Object.values(componentScores).filter(d => d.score >= 80).length, color: 'bg-green-500' },
+                { range: '60-79', label: 'Good', count: Object.values(componentScores).filter(d => d.score >= 60 && d.score < 80).length, color: 'bg-blue-500' },
+                { range: '40-59', label: 'Average', count: Object.values(componentScores).filter(d => d.score >= 40 && d.score < 60).length, color: 'bg-yellow-500' },
+                { range: '20-39', label: 'Poor', count: Object.values(componentScores).filter(d => d.score >= 20 && d.score < 40).length, color: 'bg-orange-500' },
+                { range: '0-19', label: 'Critical', count: Object.values(componentScores).filter(d => d.score < 20).length, color: 'bg-red-500' }
+              ].map(item => (
+                <div key={item.range} className="flex items-center space-x-3">
+                  <div className={`w-4 h-4 rounded ${item.color}`}></div>
+                  <div className="flex-1 flex justify-between">
+                    <span className="text-sm text-gray-700">{item.label} ({item.range})</span>
+                    <span className="text-sm font-medium">{item.count} criteria</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Trend analysis */}
+          <div>
+            <h4 className="font-medium text-gray-900 mb-4">Trend Analysis</h4>
+            <div className="space-y-3">
+              {[
+                { trend: 'improving', label: 'Improving', count: Object.values(componentScores).filter(d => d.trendDirection === 'improving').length, color: 'text-green-600', icon: TrendingUp },
+                { trend: 'stable', label: 'Stable', count: Object.values(componentScores).filter(d => d.trendDirection === 'stable').length, color: 'text-gray-600', icon: Activity },
+                { trend: 'declining', label: 'Declining', count: Object.values(componentScores).filter(d => d.trendDirection === 'declining').length, color: 'text-red-600', icon: TrendingDown }
+              ].map(item => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.trend} className="flex items-center space-x-3">
+                    <Icon className={`w-4 h-4 ${item.color}`} />
+                    <div className="flex-1 flex justify-between">
+                      <span className="text-sm text-gray-700">{item.label}</span>
+                      <span className="text-sm font-medium">{item.count} criteria</span>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    {getTrendIcon(data.score, previousScore)}
-                    <div className="text-right">
-                      <div className="text-xl font-bold text-gray-900">
-                        {data.score.toFixed(1)}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        Raw: {data.rawValue?.toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Score bar */}
-                <div className="mb-3">
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className={`h-3 rounded-full transition-all duration-500 ${
-                        data.score >= 80 ? 'bg-green-500' :
-                        data.score >= 60 ? 'bg-blue-500' :
-                        data.score >= 40 ? 'bg-yellow-500' :
-                        data.score >= 20 ? 'bg-orange-500' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${data.score}%` }}
-                    />
-                  </div>
-                </div>
-                
-                {/* Additional details */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Weight:</span>
-                    <span className="ml-2 font-medium">{data.weight.toFixed(1)}x</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Confidence:</span>
-                    <span className="ml-2 font-medium">{Math.round(data.confidence * 100)}%</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Type:</span>
-                    <span className="ml-2 font-medium capitalize">{data.type}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Inverted:</span>
-                    <span className="ml-2 font-medium">{data.invertedScore ? 'Yes' : 'No'}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -342,23 +549,37 @@ const CountryProfile = ({
               </div>
             </div>
 
-            {/* Category Trends */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {Object.keys(countryData.categoryScores).map(category => (
-                <div key={category} className="p-4 border rounded-lg">
-                  <h5 className="font-medium text-gray-900 mb-3">{category}</h5>
+            {/* Individual Criterion Trends */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Object.keys(componentScores).map(criterion => (
+                <div key={criterion} className="p-4 border rounded-lg">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <span className="text-lg">{getCriterionIcon(criterion)}</span>
+                    <h5 className="font-medium text-gray-900 text-sm">{componentScores[criterion].description}</h5>
+                  </div>
                   <div className="space-y-2">
                     {Object.entries(historicalData)
                       .sort(([a], [b]) => parseInt(a) - parseInt(b))
                       .slice(-3) // Show last 3 data points
-                      .map(([year, data]) => (
-                        <div key={year} className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">{year}</span>
-                          <span className="font-medium">
-                            {data.categoryScores?.[category]?.toFixed(1) || 'N/A'}
-                          </span>
-                        </div>
-                      ))}
+                      .map(([year, data]) => {
+                        const score = data.componentScores?.[criterion]?.score;
+                        return (
+                          <div key={year} className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">{year}</span>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium">
+                                {score?.toFixed(1) || 'N/A'}
+                              </span>
+                              <div className="w-12 h-2 bg-gray-200 rounded-full">
+                                <div 
+                                  className="h-2 bg-blue-500 rounded-full transition-all duration-300"
+                                  style={{ width: `${(score || 0)}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               ))}
@@ -531,7 +752,7 @@ const CountryProfile = ({
         <nav className="flex space-x-8 px-6">
           {[
             { id: 'overview', label: 'Overview', icon: Star },
-            { id: 'detailed', label: 'Detailed Analysis', icon: BarChart3 },
+            { id: 'detailed', label: 'Component Analysis', icon: BarChart3 },
             { id: 'trends', label: 'Historical Trends', icon: Activity },
             { id: 'comparison', label: 'Global Comparison', icon: Globe }
           ].map(tab => {
