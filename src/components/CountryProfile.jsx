@@ -482,9 +482,9 @@ const CountryProfile = ({
   }
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border ${className}`}>
-      {/* Header */}
-      <div className="p-6 border-b">
+    <div className={`flex flex-col h-full bg-white rounded-lg shadow-sm border ${className}`}>
+      {/* Header - Fixed */}
+      <div className="flex-shrink-0 p-6 border-b">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {onBack && (
@@ -526,8 +526,8 @@ const CountryProfile = ({
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b">
+      {/* Tabs - Fixed */}
+      <div className="flex-shrink-0 border-b">
         <nav className="flex space-x-8 px-6">
           {[
             { id: 'overview', label: 'Overview', icon: Star },
@@ -554,12 +554,14 @@ const CountryProfile = ({
         </nav>
       </div>
 
-      {/* Tab Content */}
-      <div className="p-6">
-        {activeTab === 'overview' && renderOverviewTab()}
-        {activeTab === 'detailed' && renderDetailedTab()}
-        {activeTab === 'trends' && renderTrendsTab()}
-        {activeTab === 'comparison' && renderComparisonTab()}
+      {/* Tab Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-6">
+          {activeTab === 'overview' && renderOverviewTab()}
+          {activeTab === 'detailed' && renderDetailedTab()}
+          {activeTab === 'trends' && renderTrendsTab()}
+          {activeTab === 'comparison' && renderComparisonTab()}
+        </div>
       </div>
     </div>
   );
