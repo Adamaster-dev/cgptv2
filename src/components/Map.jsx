@@ -430,6 +430,11 @@ const Map = ({
               if (onCountryClick) {
                 onCountryClick(countryCode, countryData);
               }
+              
+              // Also trigger country profile view if handler is available
+              if (onViewCountryProfile && countryData) {
+                onViewCountryProfile(countryCode);
+              }
             }
           });
 
@@ -438,23 +443,38 @@ const Map = ({
           const countryData = filteredData[countryCode] || indexData[countryCode];
           
           if (countryData) {
-            layer.bindPopup(`
-              <div class="p-3">
-                <h3 class="font-semibold text-gray-900 mb-2">${countryName}</h3>
-                <div class="space-y-1 text-sm">
-                  <div>Quality Score: <span class="font-medium" style="color: ${scoreToColor(countryData.compositeScore, 1)}">${countryData.compositeScore?.toFixed(1) || 'N/A'}/100</span></div>
-                  ${countryData.ranking ? `<div>Global Rank: <span class="font-medium">#${countryData.ranking.rank} of ${countryData.ranking.totalCountries}</span></div>` : ''}
-                  <div>Data Completeness: <span class="font-medium">${Math.round((countryData.dataCompleteness || 0) * 100)}%</span></div>
-                  <div>Confidence: <span class="font-medium">${Math.round((countryData.confidence || 0) * 100)}%</span></div>
-                  ${countryData.filteredBy ? `<div class="mt-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">Filtered by ${countryData.filteredBy}</div>` : ''}
-                </div>
-                <div class="mt-3 pt-2 border-t">
-                  <button onclick="window.showCountryProfile('${countryCode}')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                    View Detailed Profile →
-                  </button>
-                </div>
+            // Create popup content with a proper button
+            const popupContent = document.createElement('div');
+            popupContent.className = 'p-3';
+            popupContent.innerHTML = `
+              <h3 class="font-semibold text-gray-900 mb-2">${countryName}</h3>
+              <div class="space-y-1 text-sm">
+                <div>Quality Score: <span class="font-medium" style="color: ${scoreToColor(countryData.compositeScore, 1)}">${countryData.compositeScore?.toFixed(1) || 'N/A'}/100</span></div>
+                ${countryData.ranking ? `<div>Global Rank: <span class="font-medium">#${countryData.ranking.rank} of ${countryData.ranking.totalCountries}</span></div>` : ''}
+                <div>Data Completeness: <span class="font-medium">${Math.round((countryData.dataCompleteness || 0) * 100)}%</span></div>
+                <div>Confidence: <span class="font-medium">${Math.round((countryData.confidence || 0) * 100)}%</span></div>
+                ${countryData.filteredBy ? `<div class="mt-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">Filtered by ${countryData.filteredBy}</div>` : ''}
               </div>
-            `);
+              <div class="mt-3 pt-2 border-t">
+                <button id="profile-btn-${countryCode}" class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">
+                  View Detailed Profile →
+                </button>
+              </div>
+            `;
+            
+            // Bind popup
+            layer.bindPopup(popupContent);
+            
+            // Add event listener for the profile button after popup opens
+            layer.on('popupopen', () => {
+              const profileBtn = document.getElementById(`profile-btn-${countryCode}`);
+              if (profileBtn && onViewCountryProfile) {
+                profileBtn.addEventListener('click', () => {
+                  onViewCountryProfile(countryCode);
+                  map.closePopup(); // Close the popup after clicking
+                });
+              }
+            });
           }
         }
       }).addTo(map);
@@ -485,19 +505,6 @@ const Map = ({
       setError(`Map initialization failed: ${error.message}`);
     }
   }, [geoJsonData]);
-
-  // Global function for popup buttons
-  useEffect(() => {
-    window.showCountryProfile = (countryCode) => {
-      if (onViewCountryProfile) {
-        onViewCountryProfile(countryCode);
-      }
-    };
-    
-    return () => {
-      delete window.showCountryProfile;
-    };
-  }, [onViewCountryProfile]);
 
   // Update map styles when data changes
   useEffect(() => {
