@@ -427,13 +427,9 @@ const Map = ({
               const filteredData = applyFilters(indexData, filterState);
               const countryData = filteredData[countryCode] || indexData[countryCode];
               
+              // Only trigger onCountryClick, NOT onViewCountryProfile
               if (onCountryClick) {
                 onCountryClick(countryCode, countryData);
-              }
-              
-              // Also trigger country profile view if handler is available
-              if (onViewCountryProfile && countryData) {
-                onViewCountryProfile(countryCode);
               }
             }
           });
@@ -649,7 +645,7 @@ const Map = ({
                 </div>
               )}
               <div className="mt-2 pt-2 border-t text-xs text-gray-500">
-                Click to view detailed profile
+                Click for tooltip • "View Detailed Profile" for full analysis
               </div>
             </div>
           ) : (
