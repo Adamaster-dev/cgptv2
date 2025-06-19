@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, MessageSquare, Loader2, MapPin, X, Lightbulb, Globe } from 'lucide-react';
+import { Send, MessageSquare, Loader2, MapPin, X, Lightbulb, Globe, Sparkles } from 'lucide-react';
 import { llmService } from '../api/llmService';
 
 /**
- * QueryBox Component for natural-language queries with LLM recommendations
+ * QueryBox Component redesigned to match dashboard UI kit
  */
 const QueryBox = ({
   selectedYear = 2020,
@@ -19,16 +19,13 @@ const QueryBox = ({
   const [queryHistory, setQueryHistory] = useState([]);
   const textareaRef = useRef(null);
 
-  // Sample queries for inspiration
   const sampleQueries = [
     "I want a warm climate with low flood risk and good economic opportunities",
     "Find countries with stable economies but minimal wildfire threats",
     "Where can I live with low water scarcity and high GDP per capita?",
-    "Recommend places with minimal climate risks for raising a family",
-    "I need somewhere with good food security and low cyclone risk"
+    "Recommend places with minimal climate risks for raising a family"
   ];
 
-  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -53,9 +50,8 @@ const QueryBox = ({
         timestamp: new Date(),
         year: selectedYear,
         weightingScheme
-      }, ...prev.slice(0, 4)]); // Keep last 5 queries
+      }, ...prev.slice(0, 4)]);
 
-      // Notify parent component about recommendations
       if (onCountryRecommendations && result.recommendations) {
         onCountryRecommendations(result.recommendations);
       }
@@ -88,19 +84,21 @@ const QueryBox = ({
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border ${className}`}>
+    <div className={`${className}`}>
       {/* Header */}
-      <div className="p-4 border-b">
+      <div className="p-6 border-b border-gray-100">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="w-full flex items-center justify-between text-left hover:bg-gray-50 -m-2 p-2 rounded-lg transition-colors"
         >
           <div className="flex items-center space-x-3">
-            <MessageSquare className="w-5 h-5 text-gray-600" />
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">AI Assistant</h3>
               <p className="text-sm text-gray-600">
-                Ask about ideal locations based on your preferences
+                Get personalized recommendations
               </p>
             </div>
           </div>
@@ -108,7 +106,7 @@ const QueryBox = ({
             {response && (
               <div className="flex items-center space-x-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
                 <MapPin className="w-3 h-3" />
-                <span>{response.recommendations?.length || 0} found</span>
+                <span>{response.recommendations?.length || 0}</span>
               </div>
             )}
             {isExpanded ? (
@@ -122,11 +120,11 @@ const QueryBox = ({
 
       {/* Query Interface */}
       {isExpanded && (
-        <div className="p-4 space-y-4">
+        <div className="p-6 space-y-6">
           {/* Query Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="query-input" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="query-input" className="block text-sm font-medium text-gray-700 mb-3">
                 Describe your ideal location preferences
               </label>
               <div className="relative">
@@ -137,18 +135,18 @@ const QueryBox = ({
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="e.g., I want somewhere warm with low flood risk and good economic opportunities..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   rows="3"
                   disabled={isLoading}
                 />
-                <div className="absolute bottom-2 right-2 flex items-center space-x-2">
+                <div className="absolute bottom-3 right-3 flex items-center space-x-2">
                   <span className="text-xs text-gray-400">
-                    Ctrl+Enter to send
+                    Ctrl+Enter
                   </span>
                   <button
                     type="submit"
                     disabled={!query.trim() || isLoading}
-                    className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="p-2 bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-lg hover:from-purple-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                   >
                     {isLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -173,7 +171,7 @@ const QueryBox = ({
                   <button
                     key={index}
                     onClick={() => handleSampleQuery(sample)}
-                    className="text-left p-3 text-sm text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-transparent hover:border-gray-200"
+                    className="text-left p-3 text-sm text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors border border-transparent hover:border-gray-200"
                   >
                     "{sample}"
                   </button>
@@ -184,7 +182,7 @@ const QueryBox = ({
 
           {/* Error Display */}
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0">
                   <X className="w-5 h-5 text-red-500" />
@@ -209,7 +207,10 @@ const QueryBox = ({
           {response && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="font-medium text-gray-900">AI Recommendations</h4>
+                <h4 className="font-medium text-gray-900 flex items-center space-x-2">
+                  <Globe className="w-4 h-4 text-purple-600" />
+                  <span>AI Recommendations</span>
+                </h4>
                 <button
                   onClick={handleClearResponse}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -220,7 +221,7 @@ const QueryBox = ({
 
               {/* Summary */}
               {response.summary && (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
                   <p className="text-sm text-blue-800">{response.summary}</p>
                 </div>
               )}
@@ -228,135 +229,76 @@ const QueryBox = ({
               {/* Recommendations */}
               {response.recommendations && response.recommendations.length > 0 && (
                 <div className="space-y-3">
-                  <h5 className="font-medium text-gray-900 flex items-center space-x-2">
-                    <Globe className="w-4 h-4" />
-                    <span>Recommended Countries</span>
-                  </h5>
-                  <div className="grid gap-3">
-                    {response.recommendations.map((rec, index) => (
-                      <div
-                        key={index}
-                        className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h6 className="font-semibold text-gray-900">
-                              {rec.country}
-                            </h6>
-                            <div className="flex items-center space-x-2 mt-1">
-                              <span className="text-sm text-gray-600">
-                                Quality Score: {rec.score?.toFixed(1) || 'N/A'}/100
-                              </span>
-                              {rec.rank && (
-                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                                  Rank #{rec.rank}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="w-4 h-4 text-blue-500" />
-                            <span className="text-xs text-blue-600 font-medium">
-                              {rec.matchPercentage || 85}% match
+                  {response.recommendations.map((rec, index) => (
+                    <div
+                      key={index}
+                      className="p-4 border border-gray-200 rounded-xl hover:border-purple-300 hover:bg-purple-50 transition-all cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h6 className="font-semibold text-gray-900 flex items-center space-x-2">
+                            <span>{rec.country}</span>
+                            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+                              #{index + 1}
                             </span>
+                          </h6>
+                          <div className="flex items-center space-x-3 mt-1">
+                            <span className="text-sm text-gray-600">
+                              Score: {rec.score?.toFixed(1) || 'N/A'}/100
+                            </span>
+                            {rec.rank && (
+                              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                                Rank #{rec.rank}
+                              </span>
+                            )}
                           </div>
                         </div>
-                        
-                        {rec.reasoning && (
-                          <p className="text-sm text-gray-700 mb-3">
-                            {rec.reasoning}
-                          </p>
-                        )}
-                        
-                        {rec.strengths && rec.strengths.length > 0 && (
-                          <div className="space-y-2">
-                            <div className="text-xs font-medium text-green-700">
-                              Key Strengths:
-                            </div>
-                            <div className="flex flex-wrap gap-1">
-                              {rec.strengths.map((strength, idx) => (
-                                <span
-                                  key={idx}
-                                  className="inline-flex items-center px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full"
-                                >
-                                  {strength}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {rec.considerations && rec.considerations.length > 0 && (
-                          <div className="space-y-2 mt-3">
-                            <div className="text-xs font-medium text-yellow-700">
-                              Considerations:
-                            </div>
-                            <div className="flex flex-wrap gap-1">
-                              {rec.considerations.map((consideration, idx) => (
-                                <span
-                                  key={idx}
-                                  className="inline-flex items-center px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full"
-                                >
-                                  {consideration}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        <div className="flex items-center space-x-1 bg-green-50 px-2 py-1 rounded-full">
+                          <MapPin className="w-3 h-3 text-green-600" />
+                          <span className="text-xs text-green-700 font-medium">
+                            {rec.matchPercentage || 85}%
+                          </span>
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                      
+                      {rec.reasoning && (
+                        <p className="text-sm text-gray-700 mb-3">
+                          {rec.reasoning}
+                        </p>
+                      )}
+                      
+                      {rec.strengths && rec.strengths.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {rec.strengths.map((strength, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full"
+                            >
+                              {strength}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
 
               {/* Explanation */}
               {response.explanation && (
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h5 className="font-medium text-gray-900 mb-2">Analysis Explanation</h5>
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <h5 className="font-medium text-gray-900 mb-2">Analysis Details</h5>
                   <p className="text-sm text-gray-700">{response.explanation}</p>
                 </div>
               )}
-
-              {/* Methodology */}
-              {response.methodology && (
-                <details className="group">
-                  <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
-                    How this analysis was performed
-                  </summary>
-                  <div className="mt-2 p-3 bg-gray-50 rounded text-sm text-gray-600">
-                    {response.methodology}
-                  </div>
-                </details>
-              )}
-            </div>
-          )}
-
-          {/* Query History */}
-          {queryHistory.length > 0 && (
-            <div className="pt-4 border-t">
-              <h5 className="font-medium text-gray-900 mb-3">Recent Queries</h5>
-              <div className="space-y-2">
-                {queryHistory.slice(0, 3).map((item, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setQuery(item.query)}
-                    className="w-full text-left p-3 text-sm bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <div className="text-gray-700 mb-1">"{item.query}"</div>
-                    <div className="text-xs text-gray-500">
-                      {item.response.recommendations?.length || 0} recommendations • {item.year} • {new Date(item.timestamp).toLocaleDateString()}
-                    </div>
-                  </button>
-                ))}
-              </div>
             </div>
           )}
 
           {/* Context Info */}
-          <div className="pt-4 border-t">
+          <div className="pt-4 border-t border-gray-100">
             <div className="text-xs text-gray-500 space-y-1">
-              <div>Current analysis context: {selectedYear} • {weightingScheme} weighting</div>
-              <div>Powered by AI language model with climate and economic data</div>
+              <div>Analysis: {selectedYear} • {weightingScheme} weighting</div>
+              <div>Powered by AI with climate and economic data</div>
             </div>
           </div>
         </div>

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, RotateCcw, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { Filter, RotateCcw, ChevronDown, ChevronUp, Info, Sliders } from 'lucide-react';
 import { indexService } from '../api/indexService';
 
 /**
- * Filters Component for individual scenario filtering and threshold controls
+ * Filters Component redesigned to match dashboard UI kit
  */
 const Filters = ({
   selectedYear = 2020,
@@ -17,14 +17,12 @@ const Filters = ({
   const [criteria, setCriteria] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load available criteria on component mount
   useEffect(() => {
     const loadCriteria = async () => {
       try {
         const availableCriteria = indexService.getAvailableCriteria();
         setCriteria(availableCriteria);
         
-        // Initialize default thresholds
         const defaultThresholds = {};
         availableCriteria.forEach(criterion => {
           defaultThresholds[criterion.id] = {
@@ -44,7 +42,6 @@ const Filters = ({
     loadCriteria();
   }, []);
 
-  // Notify parent component when filters change
   useEffect(() => {
     if (onFiltersChange) {
       const filterState = {
@@ -113,22 +110,17 @@ const Filters = ({
   };
 
   const getCriterionIcon = (category) => {
-    // Simple icon mapping based on category
     switch (category) {
-      case 'Environmental Risk':
-        return '🌍';
-      case 'Economic Prosperity':
-        return '💰';
-      case 'Social Welfare':
-        return '🏥';
-      default:
-        return '📊';
+      case 'Environmental Risk': return '🌍';
+      case 'Economic Prosperity': return '💰';
+      case 'Social Welfare': return '🏥';
+      default: return '📊';
     }
   };
 
   if (loading) {
     return (
-      <div className={`bg-white rounded-lg shadow-sm border p-4 ${className}`}>
+      <div className={`${className}`}>
         <div className="animate-pulse">
           <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
           <div className="space-y-3">
@@ -142,15 +134,17 @@ const Filters = ({
   }
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border ${className}`}>
+    <div className={`${className}`}>
       {/* Header */}
-      <div className="p-4 border-b">
+      <div className="p-6 border-b border-gray-100">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="w-full flex items-center justify-between text-left hover:bg-gray-50 -m-2 p-2 rounded-lg transition-colors"
         >
           <div className="flex items-center space-x-3">
-            <Filter className="w-5 h-5 text-gray-600" />
+            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+              <Sliders className="w-5 h-5 text-purple-600" />
+            </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
               <p className="text-sm text-gray-600">{getFilterSummary()}</p>
@@ -166,11 +160,11 @@ const Filters = ({
 
       {/* Filter Controls */}
       {isExpanded && (
-        <div className="p-4 space-y-6">
+        <div className="p-6 space-y-6">
           {/* Quick Actions */}
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-600">
-              Filter by individual criteria or set custom thresholds
+              Customize your analysis criteria
             </div>
             <button
               onClick={handleResetFilters}
@@ -188,18 +182,18 @@ const Filters = ({
               <div className="group relative">
                 <Info className="w-4 h-4 text-gray-400 cursor-help" />
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-                  Select criteria to view only those factors on the map
+                  Select criteria to focus analysis
                 </div>
               </div>
             </h4>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid gap-3">
               {criteria.map(criterion => (
                 <label
                   key={criterion.id}
-                  className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                  className={`flex items-center space-x-3 p-4 rounded-xl border cursor-pointer transition-all ${
                     activeFilters.has(criterion.id)
-                      ? 'border-blue-500 bg-blue-50'
+                      ? 'border-purple-200 bg-purple-50'
                       : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
@@ -207,7 +201,7 @@ const Filters = ({
                     type="checkbox"
                     checked={activeFilters.has(criterion.id)}
                     onChange={() => handleCriterionToggle(criterion.id)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2">
@@ -234,7 +228,7 @@ const Filters = ({
               <div className="group relative">
                 <Info className="w-4 h-4 text-gray-400 cursor-help" />
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-                  Set minimum and maximum score ranges (0-100 scale)
+                  Set score ranges (0-100 scale)
                 </div>
               </div>
             </h4>
@@ -245,9 +239,9 @@ const Filters = ({
                 return (
                   <div
                     key={`threshold-${criterion.id}`}
-                    className={`p-4 rounded-lg border transition-all ${
+                    className={`p-4 rounded-xl border transition-all ${
                       threshold.enabled
-                        ? 'border-green-500 bg-green-50'
+                        ? 'border-green-200 bg-green-50'
                         : 'border-gray-200'
                     }`}
                   >
@@ -263,7 +257,7 @@ const Filters = ({
                           {criterion.description}
                         </span>
                       </label>
-                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
                         {criterion.category}
                       </span>
                     </div>
@@ -281,7 +275,7 @@ const Filters = ({
                             step="1"
                             value={threshold.min}
                             onChange={(e) => handleThresholdChange(criterion.id, 'min', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                           />
                         </div>
                         <div>
@@ -295,7 +289,7 @@ const Filters = ({
                             step="1"
                             value={threshold.max}
                             onChange={(e) => handleThresholdChange(criterion.id, 'max', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                           />
                         </div>
                       </div>
@@ -306,14 +300,14 @@ const Filters = ({
             </div>
           </div>
 
-          {/* Filter Summary */}
+          {/* Active Filters Summary */}
           {(activeFilters.size > 0 || Object.values(thresholds).some(t => t.enabled)) && (
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h5 className="font-medium text-blue-900 mb-2">Active Filters Summary</h5>
+            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+              <h5 className="font-medium text-blue-900 mb-2">Active Filters</h5>
               <div className="space-y-2 text-sm">
                 {activeFilters.size > 0 && (
                   <div>
-                    <span className="text-blue-800 font-medium">Individual Criteria: </span>
+                    <span className="text-blue-800 font-medium">Criteria: </span>
                     <span className="text-blue-700">
                       {Array.from(activeFilters).map(id => 
                         criteria.find(c => c.id === id)?.description
@@ -323,7 +317,7 @@ const Filters = ({
                 )}
                 {Object.entries(thresholds).filter(([_, t]) => t.enabled).length > 0 && (
                   <div>
-                    <span className="text-blue-800 font-medium">Score Thresholds: </span>
+                    <span className="text-blue-800 font-medium">Thresholds: </span>
                     <div className="mt-1 space-y-1">
                       {Object.entries(thresholds)
                         .filter(([_, threshold]) => threshold.enabled)
