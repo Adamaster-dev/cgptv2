@@ -330,7 +330,7 @@ const Map = ({
 
   // Initialize Leaflet map
   useEffect(() => {
-    if (!mapRef.current || mapInstanceRef.current || !geoJsonData) return;
+    if (!mapRef.current || mapInstanceRef.current || !geoJsonData || showCountryProfile) return;
 
     console.log('🗺️ Initializing Leaflet map...');
 
@@ -479,7 +479,23 @@ const Map = ({
       console.error('❌ Map initialization failed:', error);
       setError(`Map initialization failed: ${error.message}`);
     }
-  }, [geoJsonData]);
+  }, [geoJsonData, showCountryProfile]);
+
+  // Reinitialize map when returning from country profile
+  useEffect(() => {
+    if (!showCountryProfile && geoJsonData && mapRef.current && !mapInstanceRef.current) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        console.log('🔄 Reinitializing map after country profile...');
+        // Force re-initialization by clearing the ref and triggering the effect
+        if (mapRef.current) {
+          mapRef.current.innerHTML = '';
+        }
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showCountryProfile, geoJsonData]);
 
   // Global function for popup buttons
   useEffect(() => {
@@ -495,7 +511,7 @@ const Map = ({
 
   // Update map styles when data changes
   useEffect(() => {
-    if (geoJsonLayerRef.current && Object.keys(indexData).length > 0) {
+    if (geoJsonLayerRef.current && Object.keys(indexData).length > 0 && !showCountryProfile) {
       console.log('🎨 Updating map styles...');
       
       geoJsonLayerRef.current.eachLayer((layer) => {
@@ -510,11 +526,11 @@ const Map = ({
       
       console.log('✅ Map styles updated');
     }
-  }, [indexData, filterState, recommendedCountries]);
+  }, [indexData, filterState, recommendedCountries, showCountryProfile]);
 
   // Update recommendation markers
   useEffect(() => {
-    if (mapInstanceRef.current && Object.keys(countryCenters).length > 0) {
+    if (mapInstanceRef.current && Object.keys(countryCenters).length > 0 && !showCountryProfile) {
       // Clear existing markers
       recommendationMarkersRef.current.forEach(marker => {
         mapInstanceRef.current.removeLayer(marker);
@@ -527,7 +543,18 @@ const Map = ({
         recommendationMarkersRef.current = markers;
       }
     }
-  }, [recommendedCountries, countryCenters]);
+  }, [recommendedCountries, countryCenters, showCountryProfile]);
+
+  // Clean up map when showing country profile
+  useEffect(() => {
+    if (showCountryProfile && mapInstanceRef.current) {
+      console.log('🧹 Cleaning up map for country profile...');
+      mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
+      geoJsonLayerRef.current = null;
+      recommendationMarkersRef.current = [];
+    }
+  }, [showCountryProfile]);
 
   // Calculate filter statistics
   const getFilterStats = () => {
@@ -559,6 +586,7 @@ const Map = ({
           selectedYear={selectedYear}
           weightingScheme={weightingScheme}
           onBack={() => {
+            console.log('🔙 Returning to map from country profile...');
             setShowCountryProfile(false);
             setSelectedCountryCode(null);
           }}
