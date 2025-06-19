@@ -41,6 +41,7 @@
 .ol-zoom {
   top: 1rem !important;
   left: 1rem !important;
+  z-index: 1400 !important;
 }
 
 /* Attribution control styling */
@@ -49,6 +50,7 @@
   right: 0.5rem !important;
   font-size: 0.75rem !important;
   max-width: 200px !important;
+  z-index: 1300 !important;
 }
 
 .ol-attribution ul {
@@ -73,7 +75,7 @@
   padding: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   pointer-events: none;
-  z-index: 1000;
+  z-index: 1500;
   max-width: 250px;
   font-size: 0.875rem;
 }
@@ -96,29 +98,31 @@
   color: #dc2626;
 }
 
-/* Legend styles */
+/* Legend styles - Ensure always visible */
 .map-legend {
   position: absolute;
-  bottom: 1rem;
-  right: 1rem;
+  bottom: 0.5rem;
+  right: 0.5rem;
   background: white;
   border-radius: 8px;
-  padding: 16px;
+  padding: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: 1600 !important; /* Higher than Leaflet controls */
+  max-width: 200px;
+  border: 1px solid #e5e7eb;
 }
 
 .map-legend h4 {
-  margin: 0 0 12px 0;
+  margin: 0 0 8px 0;
   font-weight: 600;
   color: #111827;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .legend-item:last-child {
@@ -126,16 +130,18 @@
 }
 
 .legend-color {
-  width: 16px;
-  height: 16px;
-  border-radius: 3px;
-  margin-right: 8px;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  margin-right: 6px;
   border: 1px solid rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 }
 
 .legend-label {
   font-size: 0.75rem;
   color: #6b7280;
+  line-height: 1.2;
 }
 
 /* Loading and error overlays */
@@ -173,12 +179,30 @@
   100% { transform: rotate(360deg); }
 }
 
+/* Ensure legend stays above all map elements */
+.leaflet-control-container {
+  z-index: 1000 !important;
+}
+
+.leaflet-popup-pane {
+  z-index: 1200 !important;
+}
+
+.leaflet-marker-pane {
+  z-index: 1100 !important;
+}
+
+.leaflet-overlay-pane {
+  z-index: 400 !important;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .map-legend {
-    bottom: 0.5rem;
-    right: 0.5rem;
-    padding: 12px;
+    bottom: 0.25rem;
+    right: 0.25rem;
+    padding: 6px;
+    max-width: 160px;
   }
   
   .map-tooltip {
@@ -195,20 +219,33 @@
   .ol-attribution {
     display: none !important;
   }
+  
+  .legend-color {
+    width: 10px;
+    height: 10px;
+  }
+  
+  .legend-label {
+    font-size: 0.7rem;
+  }
 }
 
 @media (max-width: 480px) {
   .map-legend {
-    position: relative;
-    bottom: auto;
-    right: auto;
-    margin-top: 1rem;
-    box-shadow: none;
-    border: 1px solid #e5e7eb;
+    position: fixed;
+    bottom: 0.25rem;
+    right: 0.25rem;
+    max-width: 140px;
+    padding: 4px;
+    z-index: 1600 !important;
   }
   
   .map-container {
     min-height: 300px;
+  }
+  
+  .legend-item {
+    margin-bottom: 2px;
   }
 }
 
@@ -238,4 +275,12 @@
   .ol-control button {
     transition: none !important;
   }
+}
+
+/* Force legend visibility */
+.map-legend,
+.map-legend * {
+  pointer-events: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }

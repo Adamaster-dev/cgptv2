@@ -607,7 +607,7 @@ const Map = ({
       
       {/* Loading overlay */}
       {loading && (
-        <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center">
+        <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-[2000]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading map data...</p>
@@ -617,14 +617,14 @@ const Map = ({
       
       {/* Error overlay */}
       {error && (
-        <div className="absolute top-4 left-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3 max-w-sm">
+        <div className="absolute top-4 left-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3 max-w-sm z-[1500]">
           <p className="text-yellow-800 text-sm">{error}</p>
         </div>
       )}
       
       {/* Filter status indicator */}
       {filterStats && (
-        <div className="absolute top-4 right-4 bg-white p-3 rounded-lg shadow-lg border border-blue-200">
+        <div className="absolute top-4 right-4 bg-white p-3 rounded-lg shadow-lg border border-blue-200 z-[1500]">
           <div className="text-sm">
             <div className="font-medium text-blue-900 mb-1">Filter Active</div>
             <div className="text-blue-700">
@@ -636,7 +636,7 @@ const Map = ({
 
       {/* Recommendations indicator */}
       {recommendedCountries.length > 0 && (
-        <div className="absolute top-20 left-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 rounded-lg shadow-lg">
+        <div className="absolute top-20 left-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 rounded-lg shadow-lg z-[1500]">
           <div className="text-sm">
             <div className="font-medium mb-1">AI Recommendations</div>
             <div className="text-blue-100">
@@ -648,7 +648,7 @@ const Map = ({
       
       {/* Hover tooltip */}
       {hoveredCountry && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white p-4 rounded-lg shadow-lg border max-w-xs">
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white p-4 rounded-lg shadow-lg border max-w-xs z-[1500]">
           <h3 className="font-semibold text-gray-900 mb-2">{hoveredCountry.name}</h3>
           {hoveredCountry.isFiltered ? (
             <p className="text-gray-500 text-sm">Filtered out by current criteria</p>
@@ -691,51 +691,51 @@ const Map = ({
         </div>
       )}
       
-      {/* Compact Legend - Always Visible */}
-      <div className="absolute bottom-3 right-3 bg-white rounded-lg shadow-lg border border-gray-200 p-3 max-w-xs">
+      {/* Compact Legend - Always Visible with High Z-Index */}
+      <div className="absolute bottom-2 right-2 bg-white rounded-lg shadow-lg border border-gray-200 p-2 max-w-[200px] z-[1600]">
         <h4 className="font-medium text-gray-900 mb-2 text-xs">Quality Index</h4>
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: scoreToColor(90) }}></div>
+            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: scoreToColor(90) }}></div>
             <span className="text-xs text-gray-600">Excellent (80+)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: scoreToColor(70) }}></div>
+            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: scoreToColor(70) }}></div>
             <span className="text-xs text-gray-600">Good (60-80)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: scoreToColor(50) }}></div>
+            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: scoreToColor(50) }}></div>
             <span className="text-xs text-gray-600">Average (40-60)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: scoreToColor(30) }}></div>
+            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: scoreToColor(30) }}></div>
             <span className="text-xs text-gray-600">Poor (20-40)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: scoreToColor(10) }}></div>
+            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: scoreToColor(10) }}></div>
             <span className="text-xs text-gray-600">Critical (0-20)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-sm bg-gray-300"></div>
+            <div className="w-3 h-3 rounded-sm bg-gray-300 flex-shrink-0"></div>
             <span className="text-xs text-gray-600">No Data</span>
           </div>
           
           {/* Additional legend items when applicable */}
           {filterStats && (
             <div className="flex items-center space-x-2 pt-1 border-t border-gray-200">
-              <div className="w-3 h-3 rounded-sm bg-gray-200"></div>
+              <div className="w-3 h-3 rounded-sm bg-gray-200 flex-shrink-0"></div>
               <span className="text-xs text-gray-600">Filtered Out</span>
             </div>
           )}
           {recommendedCountries.length > 0 && (
             <div className="flex items-center space-x-2 pt-1 border-t border-gray-200">
-              <div className="w-3 h-3 rounded-full bg-blue-600 border border-white"></div>
+              <div className="w-3 h-3 rounded-full bg-blue-600 border border-white flex-shrink-0"></div>
               <span className="text-xs text-gray-600">AI Recommended</span>
             </div>
           )}
           {borderValidationResults && borderValidationResults.issues.length > 0 && (
             <div className="flex items-center space-x-2 pt-1 border-t border-gray-200">
-              <div className="w-3 h-3 rounded-sm border-2 border-red-600 bg-transparent"></div>
+              <div className="w-3 h-3 rounded-sm border-2 border-red-600 bg-transparent flex-shrink-0"></div>
               <span className="text-xs text-gray-600">Border Issues</span>
             </div>
           )}
