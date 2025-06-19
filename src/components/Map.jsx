@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { indexService } from '../api/indexService';
 import { BorderVerifier } from '../utils/borderVerification';
 import BorderDiagnostics from './BorderDiagnostics';
+import CountryProfile from './CountryProfile';
 import axios from 'axios';
 
 // Fix for default markers in Leaflet
@@ -229,6 +230,8 @@ const Map = ({
   const [borderValidationResults, setBorderValidationResults] = useState(null);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [debugInfo, setDebugInfo] = useState({});
+  const [selectedCountryCode, setSelectedCountryCode] = useState(null);
+  const [showCountryProfile, setShowCountryProfile] = useState(false);
 
   // Load GeoJSON data and country centers on component mount
   useEffect(() => {
@@ -423,9 +426,14 @@ const Map = ({
               }
             },
             click: (e) => {
+              const filteredData = applyFilters(indexData, filterState);
+              const countryData = filteredData[countryCode] || indexData[countryCode];
+              
+              // Set selected country and show profile
+              setSelectedCountryCode(countryCode);
+              setShowCountryProfile(true);
+              
               if (onCountryClick) {
-                const filteredData = applyFilters(indexData, filterState);
-                const countryData = filteredData[countryCode] || indexData[countryCode];
                 onCountryClick(countryCode, countryData);
               }
             }
@@ -445,6 +453,11 @@ const Map = ({
                   <div>Data Completeness: <span class="font-medium">${Math.round((countryData.dataCompleteness || 0) * 100)}%</span></div>
                   <div>Confidence: <span class="font-medium">${Math.round((countryData.confidence || 0) * 100)}%</span></div>
                   ${countryData.filteredBy ? `<div class="mt-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">Filtered by ${countryData.filteredBy}</div>` : ''}
+                </div>
+                <div class="mt-3 pt-2 border-t">
+                  <button onclick="window.showCountryProfile('${countryCode}')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                    View Detailed Profile →
+                  </button>
                 </div>
               </div>
             `);
@@ -478,6 +491,18 @@ const Map = ({
       setError(`Map initialization failed: ${error.message}`);
     }
   }, [geoJsonData]);
+
+  // Global function for popup buttons
+  useEffect(() => {
+    window.showCountryProfile = (countryCode) => {
+      setSelectedCountryCode(countryCode);
+      setShowCountryProfile(true);
+    };
+    
+    return () => {
+      delete window.showCountryProfile;
+    };
+  }, []);
 
   // Update map styles when data changes
   useEffect(() => {
@@ -535,6 +560,24 @@ const Map = ({
   };
 
   const filterStats = getFilterStats();
+
+  // Show country profile if selected
+  if (showCountryProfile && selectedCountryCode) {
+    return (
+      <div className={`w-full h-full ${className}`}>
+        <CountryProfile
+          countryCode={selectedCountryCode}
+          selectedYear={selectedYear}
+          weightingScheme={weightingScheme}
+          onBack={() => {
+            setShowCountryProfile(false);
+            setSelectedCountryCode(null);
+          }}
+          className="w-full h-full"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={`relative w-full h-full ${className}`}>
@@ -653,6 +696,9 @@ const Map = ({
                   Filtered by {hoveredCountry.filteredBy}
                 </div>
               )}
+              <div className="mt-2 pt-2 border-t text-xs text-gray-500">
+                Click to view detailed profile
+              </div>
             </div>
           ) : (
             <p className="text-gray-500 text-sm">No data available</p>
