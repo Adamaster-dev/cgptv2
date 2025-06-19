@@ -430,18 +430,20 @@ const CountryProfile = ({
 
   if (loading) {
     return (
-      <div className={`bg-white rounded-lg shadow-sm border p-8 ${className}`}>
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-          <div className="grid grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-          <div className="space-y-4">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-16 bg-gray-200 rounded"></div>
-            ))}
+      <div className={`flex flex-col h-full bg-white rounded-lg shadow-sm border ${className}`}>
+        <div className="p-8 flex-grow overflow-y-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="grid grid-cols-3 gap-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-32 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="h-16 bg-gray-200 rounded"></div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -450,20 +452,22 @@ const CountryProfile = ({
 
   if (error) {
     return (
-      <div className={`bg-white rounded-lg shadow-sm border p-8 ${className}`}>
-        <div className="text-center">
-          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Unable to Load Country Data</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Map</span>
-            </button>
-          )}
+      <div className={`flex flex-col h-full bg-white rounded-lg shadow-sm border ${className}`}>
+        <div className="p-8 flex-grow overflow-y-auto">
+          <div className="text-center">
+            <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Unable to Load Country Data</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to Map</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -471,20 +475,22 @@ const CountryProfile = ({
 
   if (!countryData) {
     return (
-      <div className={`bg-white rounded-lg shadow-sm border p-8 ${className}`}>
-        <div className="text-center">
-          <MapPin className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Country Selected</h3>
-          <p className="text-gray-600">Please select a country to view its detailed profile.</p>
+      <div className={`flex flex-col h-full bg-white rounded-lg shadow-sm border ${className}`}>
+        <div className="p-8 flex-grow overflow-y-auto">
+          <div className="text-center">
+            <MapPin className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Country Selected</h3>
+            <p className="text-gray-600">Please select a country to view its detailed profile.</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border ${className}`}>
+    <div className={`flex flex-col h-full bg-white rounded-lg shadow-sm border ${className}`}>
       {/* Header */}
-      <div className="p-6 border-b">
+      <div className="p-6 border-b flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {onBack && (
@@ -527,7 +533,7 @@ const CountryProfile = ({
       </div>
 
       {/* Tabs */}
-      <div className="border-b">
+      <div className="border-b flex-shrink-0">
         <nav className="flex space-x-8 px-6">
           {[
             { id: 'overview', label: 'Overview', icon: Star },
@@ -555,7 +561,7 @@ const CountryProfile = ({
       </div>
 
       {/* Tab Content */}
-      <div className="p-6">
+      <div className="p-6 flex-grow overflow-y-auto">
         {activeTab === 'overview' && renderOverviewTab()}
         {activeTab === 'detailed' && renderDetailedTab()}
         {activeTab === 'trends' && renderTrendsTab()}

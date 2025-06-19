@@ -3,6 +3,7 @@ import Map from './components/Map';
 import Timeline from './components/Timeline';
 import Filters from './components/Filters';
 import QueryBox from './components/QueryBox';
+import CountryProfile from './components/CountryProfile';
 import './styles/map.css';
 import './styles/timeline.css';
 
@@ -12,6 +13,8 @@ function App() {
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [filterState, setFilterState] = useState(null);
   const [recommendedCountries, setRecommendedCountries] = useState([]);
+  const [selectedCountryCodeForProfile, setSelectedCountryCodeForProfile] = useState(null);
+  const [showCountryProfileOverlay, setShowCountryProfileOverlay] = useState(false);
 
   const handleCountryClick = (countryCode, countryData) => {
     setSelectedCountry({ code: countryCode, data: countryData });
@@ -21,6 +24,16 @@ function App() {
   const handleCountryHover = (countryCode, countryData) => {
     // Handle hover events if needed
     // console.log('Country hovered:', countryCode, countryData);
+  };
+
+  const handleViewCountryProfile = (countryCode) => {
+    setSelectedCountryCodeForProfile(countryCode);
+    setShowCountryProfileOverlay(true);
+  };
+
+  const handleCloseCountryProfile = () => {
+    setShowCountryProfileOverlay(false);
+    setSelectedCountryCodeForProfile(null);
   };
 
   const handleYearChange = (newYear) => {
@@ -146,6 +159,7 @@ function App() {
               recommendedCountries={recommendedCountries}
               onCountryClick={handleCountryClick}
               onCountryHover={handleCountryHover}
+              onViewCountryProfile={handleViewCountryProfile}
               className="w-full h-full"
             />
           </div>
@@ -298,6 +312,19 @@ function App() {
           </p>
         </div>
       </main>
+
+      {/* Country Profile Overlay */}
+      {showCountryProfileOverlay && selectedCountryCodeForProfile && (
+        <div className="fixed inset-0 z-50 bg-white overflow-hidden">
+          <CountryProfile
+            countryCode={selectedCountryCodeForProfile}
+            selectedYear={selectedYear}
+            weightingScheme={weightingScheme}
+            onBack={handleCloseCountryProfile}
+            className="w-full h-full"
+          />
+        </div>
+      )}
     </div>
   );
 }
