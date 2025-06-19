@@ -154,6 +154,16 @@ const cache = {
 };
 
 /**
+ * Check if data is empty or invalid
+ */
+function isDataEmpty(data) {
+  if (!data) return true;
+  if (Array.isArray(data) && data.length === 0) return true;
+  if (typeof data === 'object' && Object.keys(data).length === 0) return true;
+  return false;
+}
+
+/**
  * Fetch data from external APIs with fallback to mock data
  */
 async function fetchFromAPI(url, fallbackData) {
@@ -165,6 +175,12 @@ async function fetchFromAPI(url, fallbackData) {
         'User-Agent': 'Expatriation-Dashboard/1.0'
       }
     });
+    
+    // Check if the response data is empty and fall back to mock data
+    if (isDataEmpty(response.data)) {
+      console.warn(`API returned empty data for ${url}, using mock data as fallback`);
+      return fallbackData;
+    }
     
     return response.data;
   } catch (error) {
