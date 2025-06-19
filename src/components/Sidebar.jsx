@@ -1,14 +1,8 @@
 import React from 'react';
 import { 
   Globe, 
-  BarChart3, 
-  Filter, 
-  MessageSquare, 
-  Settings, 
   Calendar,
   TrendingUp,
-  Users,
-  FileText,
   Menu,
   X
 } from 'lucide-react';
@@ -21,18 +15,6 @@ const Sidebar = ({
   onYearChange, 
   onWeightingChange 
 }) => {
-  const menuItems = [
-    { icon: Globe, label: 'Dashboard', active: true, count: null },
-    { icon: BarChart3, label: 'Analytics', active: false, count: null },
-    { icon: Filter, label: 'Filters', active: false, count: 3 },
-    { icon: MessageSquare, label: 'AI Assistant', active: false, count: null },
-    { icon: Calendar, label: 'Timeline', active: false, count: null },
-    { icon: TrendingUp, label: 'Trends', active: false, count: null },
-    { icon: Users, label: 'Countries', active: false, count: 195 },
-    { icon: FileText, label: 'Reports', active: false, count: null },
-    { icon: Settings, label: 'Settings', active: false, count: null },
-  ];
-
   const weightingSchemes = [
     { id: 'equal', name: 'Equal', color: 'bg-green-500' },
     { id: 'environmentFocused', name: 'Environment', color: 'bg-blue-500' },
@@ -63,37 +45,31 @@ const Sidebar = ({
 
       {/* Navigation */}
       <div className="p-4 space-y-2">
-        {menuItems.map((item, index) => (
-          <div key={index} className="relative">
-            <button className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
-              item.active 
-                ? 'bg-purple-50 text-purple-700 border border-purple-200' 
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-            }`}>
-              <item.icon className={`w-5 h-5 ${collapsed ? 'mx-auto' : ''}`} />
-              {!collapsed && (
-                <>
-                  <span className="font-medium">{item.label}</span>
-                  {item.count && (
-                    <span className="ml-auto bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
-                      {item.count}
-                    </span>
-                  )}
-                </>
-              )}
-            </button>
-          </div>
-        ))}
+        {/* Countries */}
+        <div className="relative">
+          <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 bg-purple-50 text-purple-700 border border-purple-200">
+            <Globe className={`w-5 h-5 ${collapsed ? 'mx-auto' : ''}`} />
+            {!collapsed && (
+              <>
+                <span className="font-medium">Countries</span>
+                <span className="ml-auto bg-purple-100 text-purple-600 text-xs px-2 py-1 rounded-full">
+                  195
+                </span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Quick Controls */}
       {!collapsed && (
         <div className="p-4 border-t border-gray-100 mt-auto">
           <div className="space-y-4">
-            {/* Year Selector */}
+            {/* Analysis Year */}
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-2">
-                Analysis Year
+              <label className="block text-xs font-medium text-gray-700 mb-2 flex items-center space-x-2">
+                <Calendar className="w-4 h-4" />
+                <span>Analysis Year</span>
               </label>
               <select
                 value={selectedYear}
@@ -108,8 +84,9 @@ const Sidebar = ({
 
             {/* Weighting Scheme */}
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-2">
-                Weighting Scheme
+              <label className="block text-xs font-medium text-gray-700 mb-2 flex items-center space-x-2">
+                <TrendingUp className="w-4 h-4" />
+                <span>Weighting Scheme</span>
               </label>
               <div className="space-y-2">
                 {weightingSchemes.map(scheme => (
