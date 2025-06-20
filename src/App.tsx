@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import Map from './components/Map';
-import Timeline from './components/Timeline';
 import Filters from './components/Filters';
 import QueryBox from './components/QueryBox';
 import Sidebar from './components/Sidebar';
@@ -40,8 +39,6 @@ function App() {
     setSelectedCountry(null);
   };
 
-  const availableYears = [2000, 2010, 2020, 2030, 2040, 2050, 2060, 2070, 2080, 2090, 2100];
-
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
@@ -59,32 +56,29 @@ function App() {
         {/* Header */}
         <Header />
 
+        {/* Main Title */}
+        <div className="px-6 py-6 border-b border-gray-100 bg-white">
+          <h1 className="text-4xl font-bold text-gray-900">Alors on bouge où babe?</h1>
+          <p className="text-lg text-gray-600 mt-2">Découvrez votre destination idéale grâce à l'analyse climatique et économique</p>
+        </div>
+
         {/* Dashboard Content */}
         <div className="p-6 space-y-6">
+          {/* AI Assistant - Top of page, expanded by default */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+            <QueryBox
+              selectedYear={selectedYear}
+              weightingScheme={weightingScheme}
+              onCountryRecommendations={handleCountryRecommendations}
+              className="w-full"
+              defaultExpanded={true}
+            />
+          </div>
+
           {/* Main Dashboard Grid */}
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-            {/* Left Column - Controls */}
+            {/* Left Column - Filters only */}
             <div className="xl:col-span-1 space-y-6">
-              {/* Timeline */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <Timeline
-                  selectedYear={selectedYear}
-                  onYearChange={handleYearChange}
-                  availableYears={availableYears}
-                  className="w-full"
-                />
-              </div>
-
-              {/* AI Query */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-                <QueryBox
-                  selectedYear={selectedYear}
-                  weightingScheme={weightingScheme}
-                  onCountryRecommendations={handleCountryRecommendations}
-                  className="w-full"
-                />
-              </div>
-
               {/* Filters */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-100">
                 <Filters
@@ -167,7 +161,7 @@ function App() {
                   <div className="border-t bg-gradient-to-r from-blue-50 to-indigo-50 p-4">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-lg font-semibold text-blue-900">
-                        AI Recommendations ({recommendedCountries.length})
+                        Recommandations IA ({recommendedCountries.length})
                       </h3>
                       <button
                         onClick={() => setRecommendedCountries([])}
@@ -193,7 +187,7 @@ function App() {
                           </div>
                           <div className="text-sm text-gray-600 mb-2">
                             Score: {rec.score?.toFixed(1) || 'N/A'}/100
-                            {rec.rank && ` • Rank #${rec.rank}`}
+                            {rec.rank && ` • Rang #${rec.rank}`}
                           </div>
                           {rec.strengths && rec.strengths.length > 0 && (
                             <div className="flex flex-wrap gap-1">

@@ -9,9 +9,10 @@ const QueryBox = ({
   selectedYear = 2020,
   weightingScheme = 'equal',
   onCountryRecommendations = null,
-  className = ''
+  className = '',
+  defaultExpanded = false
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState(null);
@@ -20,10 +21,10 @@ const QueryBox = ({
   const textareaRef = useRef(null);
 
   const sampleQueries = [
-    "I want a warm climate with low flood risk and good economic opportunities",
-    "Find countries with stable economies but minimal wildfire threats",
-    "Where can I live with low water scarcity and high GDP per capita?",
-    "Recommend places with minimal climate risks for raising a family"
+    "Je veux un climat chaud avec peu de risques d'inondation et de bonnes opportunités économiques",
+    "Trouve-moi des pays avec une économie stable mais peu de menaces d'incendies",
+    "Où puis-je vivre avec peu de pénurie d'eau et un PIB par habitant élevé?",
+    "Recommande-moi des endroits avec des risques climatiques minimaux pour élever une famille"
   ];
 
   useEffect(() => {
@@ -59,7 +60,7 @@ const QueryBox = ({
       setQuery('');
     } catch (err) {
       console.error('Query processing failed:', err);
-      setError(err.message || 'Failed to process your query. Please try again.');
+      setError(err.message || 'Échec du traitement de votre requête. Veuillez réessayer.');
     } finally {
       setIsLoading(false);
     }
@@ -96,9 +97,9 @@ const QueryBox = ({
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">AI Assistant</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Assistant IA</h3>
               <p className="text-sm text-gray-600">
-                Get personalized recommendations
+                Obtenez des recommandations personnalisées
               </p>
             </div>
           </div>
@@ -125,7 +126,7 @@ const QueryBox = ({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="query-input" className="block text-sm font-medium text-gray-700 mb-3">
-                Describe your ideal location preferences
+                Décrivez vos préférences de localisation idéale
               </label>
               <div className="relative">
                 <textarea
@@ -134,14 +135,14 @@ const QueryBox = ({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="e.g., I want somewhere warm with low flood risk and good economic opportunities..."
+                  placeholder="ex: Je veux un endroit chaud avec peu de risques d'inondation et de bonnes opportunités économiques..."
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   rows="3"
                   disabled={isLoading}
                 />
                 <div className="absolute bottom-3 right-3 flex items-center space-x-2">
                   <span className="text-xs text-gray-400">
-                    Ctrl+Enter
+                    Ctrl+Entrée
                   </span>
                   <button
                     type="submit"
@@ -164,7 +165,7 @@ const QueryBox = ({
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <Lightbulb className="w-4 h-4 text-yellow-500" />
-                <span className="text-sm font-medium text-gray-700">Try these examples:</span>
+                <span className="text-sm font-medium text-gray-700">Essayez ces exemples:</span>
               </div>
               <div className="grid gap-2">
                 {sampleQueries.map((sample, index) => (
@@ -189,7 +190,7 @@ const QueryBox = ({
                 </div>
                 <div className="flex-1">
                   <h4 className="text-sm font-medium text-red-800 mb-1">
-                    Query Failed
+                    Échec de la requête
                   </h4>
                   <p className="text-sm text-red-700">{error}</p>
                 </div>
@@ -209,7 +210,7 @@ const QueryBox = ({
               <div className="flex items-center justify-between">
                 <h4 className="font-medium text-gray-900 flex items-center space-x-2">
                   <Globe className="w-4 h-4 text-purple-600" />
-                  <span>AI Recommendations</span>
+                  <span>Recommandations IA</span>
                 </h4>
                 <button
                   onClick={handleClearResponse}
@@ -248,7 +249,7 @@ const QueryBox = ({
                             </span>
                             {rec.rank && (
                               <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                                Rank #{rec.rank}
+                                Rang #{rec.rank}
                               </span>
                             )}
                           </div>
@@ -287,7 +288,7 @@ const QueryBox = ({
               {/* Explanation */}
               {response.explanation && (
                 <div className="p-4 bg-gray-50 rounded-xl">
-                  <h5 className="font-medium text-gray-900 mb-2">Analysis Details</h5>
+                  <h5 className="font-medium text-gray-900 mb-2">Détails de l'analyse</h5>
                   <p className="text-sm text-gray-700">{response.explanation}</p>
                 </div>
               )}
@@ -297,8 +298,8 @@ const QueryBox = ({
           {/* Context Info */}
           <div className="pt-4 border-t border-gray-100">
             <div className="text-xs text-gray-500 space-y-1">
-              <div>Analysis: {selectedYear} • {weightingScheme} weighting</div>
-              <div>Powered by AI with climate and economic data</div>
+              <div>Analyse: {selectedYear} • Pondération {weightingScheme}</div>
+              <div>Alimenté par l'IA avec des données climatiques et économiques</div>
             </div>
           </div>
         </div>
