@@ -6,8 +6,10 @@ import {
   Menu,
   X,
   AlertTriangle,
-  Info
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
+import Filters from './Filters';
 
 const Sidebar = ({ 
   collapsed, 
@@ -15,7 +17,9 @@ const Sidebar = ({
   selectedYear, 
   weightingScheme, 
   onYearChange, 
-  onWeightingChange 
+  onWeightingChange,
+  filterState,
+  onFiltersChange
 }) => {
   const weightingSchemes = [
     { id: 'equal', name: 'Égal', color: 'bg-green-500' },
@@ -55,8 +59,8 @@ const Sidebar = ({
   const dataAccuracy = getDataAccuracyMessage(selectedYear);
 
   return (
-    <div className={`fixed left-0 top-0 h-full bg-white border-r border-gray-100 transition-all duration-300 z-50 ${
-      collapsed ? 'w-16' : 'w-64'
+    <div className={`fixed left-0 top-0 h-full bg-white border-r border-gray-100 transition-all duration-300 z-50 overflow-y-auto ${
+      collapsed ? 'w-16' : 'w-80'
     }`}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-100">
@@ -76,78 +80,88 @@ const Sidebar = ({
         </button>
       </div>
 
-      {/* Navigation */}
-      <div className="p-4 space-y-2">
-        {/* Countries */}
-        <div className="relative">
-          <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 bg-purple-50 text-purple-700 border border-purple-200">
-            <Globe className={`w-5 h-5 ${collapsed ? 'mx-auto' : ''}`} />
-            {!collapsed && (
-              <>
+      {/* Content - Only show when not collapsed */}
+      {!collapsed && (
+        <div className="flex flex-col h-full">
+          {/* Navigation */}
+          <div className="p-4 space-y-2">
+            {/* Countries */}
+            <div className="relative">
+              <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 bg-purple-50 text-purple-700 border border-purple-200">
+                <Globe className="w-5 h-5" />
                 <span className="font-medium">Pays</span>
                 <span className="ml-auto bg-purple-100 text-purple-600 text-xs px-2 py-1 rounded-full">
                   195
                 </span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Quick Controls */}
-      {!collapsed && (
-        <div className="p-4 border-t border-gray-100 space-y-6">
-          {/* Analysis Year */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-2 flex items-center space-x-2">
-              <Calendar className="w-4 h-4" />
-              <span>Année d'analyse</span>
-            </label>
-            <select
-              value={selectedYear}
-              onChange={(e) => onYearChange(parseInt(e.target.value))}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            >
-              {[2000, 2010, 2020, 2030, 2040, 2050, 2060, 2070, 2080, 2090, 2100].map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Data Accuracy Message */}
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 mt-0.5">
-                {dataAccuracy.icon}
-              </div>
-              <div className="text-xs text-gray-600">
-                <div className="font-medium text-gray-900 mb-1">{dataAccuracy.title}</div>
-                <div>{dataAccuracy.message}</div>
-              </div>
+              </button>
             </div>
           </div>
 
-          {/* Weighting Scheme */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-2 flex items-center space-x-2">
-              <TrendingUp className="w-4 h-4" />
-              <span>Schéma de pondération</span>
-            </label>
-            <div className="space-y-2">
-              {weightingSchemes.map(scheme => (
-                <button
-                  key={scheme.id}
-                  onClick={() => onWeightingChange(scheme.id)}
-                  className={`w-full flex items-center space-x-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                    weightingScheme === scheme.id
-                      ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className={`w-3 h-3 rounded-full ${scheme.color}`}></div>
-                  <span>{scheme.name}</span>
-                </button>
-              ))}
+          {/* Controls Section */}
+          <div className="p-4 border-t border-gray-100 space-y-6 flex-1">
+            {/* Analysis Year */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-2 flex items-center space-x-2">
+                <Calendar className="w-4 h-4" />
+                <span>Année d'analyse</span>
+              </label>
+              <select
+                value={selectedYear}
+                onChange={(e) => onYearChange(parseInt(e.target.value))}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                {[2000, 2010, 2020, 2030, 2040, 2050, 2060, 2070, 2080, 2090, 2100].map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Data Accuracy Message */}
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 mt-0.5">
+                  {dataAccuracy.icon}
+                </div>
+                <div className="text-xs text-gray-600">
+                  <div className="font-medium text-gray-900 mb-1">{dataAccuracy.title}</div>
+                  <div>{dataAccuracy.message}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Weighting Scheme */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-2 flex items-center space-x-2">
+                <TrendingUp className="w-4 h-4" />
+                <span>Schéma de pondération</span>
+              </label>
+              <div className="space-y-2">
+                {weightingSchemes.map(scheme => (
+                  <button
+                    key={scheme.id}
+                    onClick={() => onWeightingChange(scheme.id)}
+                    className={`w-full flex items-center space-x-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                      weightingScheme === scheme.id
+                        ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className={`w-3 h-3 rounded-full ${scheme.color}`}></div>
+                    <span>{scheme.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Filters Section */}
+            <div className="border-t border-gray-100 pt-6">
+              <Filters
+                selectedYear={selectedYear}
+                weightingScheme={weightingScheme}
+                onFiltersChange={onFiltersChange}
+                className="w-full"
+                sidebarMode={true}
+              />
             </div>
           </div>
         </div>
