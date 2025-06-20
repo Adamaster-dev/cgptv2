@@ -12,7 +12,7 @@ function App() {
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [filterState, setFilterState] = useState(null);
   const [recommendedCountries, setRecommendedCountries] = useState([]);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // Keep sidebar open by default
 
   const handleCountryClick = (countryCode, countryData) => {
     setSelectedCountry({ code: countryCode, data: countryData });
@@ -53,19 +53,25 @@ function App() {
         onFiltersChange={handleFiltersChange}
       />
 
-      {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+      {/* Main Content - Responsive to sidebar state */}
+      <div className={`flex-1 transition-all duration-300 ${
+        sidebarCollapsed ? 'ml-16' : 'ml-80'
+      } min-w-0`}>
         {/* Header */}
         <Header />
 
         {/* Main Title */}
-        <div className="px-6 py-6 border-b border-gray-100 bg-white">
-          <h1 className="text-4xl font-bold text-gray-900">Alors on bouge où babe?</h1>
-          <p className="text-lg text-gray-600 mt-2">Découvrez votre destination idéale grâce à l'analyse climatique et économique</p>
+        <div className="px-4 sm:px-6 py-6 border-b border-gray-100 bg-white">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
+            Alors on bouge où babe?
+          </h1>
+          <p className="text-sm sm:text-base lg:text-lg text-gray-600 mt-2">
+            Découvrez votre destination idéale grâce à l'analyse climatique et économique
+          </p>
         </div>
 
         {/* Dashboard Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6">
           {/* AI Assistant - Top of page, expanded by default */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100">
             <QueryBox
@@ -79,7 +85,7 @@ function App() {
 
           {/* Map Section - Full Width */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="h-[600px]">
+            <div className="h-[500px] sm:h-[600px] lg:h-[700px]">
               <Map
                 selectedYear={selectedYear}
                 weightingScheme={weightingScheme}
@@ -95,12 +101,12 @@ function App() {
             {selectedCountry && (
               <div className="border-t bg-gray-50 p-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 truncate">
                       Sélectionné: {selectedCountry.code}
                     </h3>
                     {selectedCountry.data && (
-                      <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                         <div>
                           <span className="text-gray-600">Score Qualité:</span>
                           <span className="ml-2 font-medium">
@@ -116,7 +122,7 @@ function App() {
                           </div>
                         )}
                         <div>
-                          <span className="text-gray-600">Complétude des données:</span>
+                          <span className="text-gray-600">Complétude:</span>
                           <span className="ml-2 font-medium">
                             {Math.round((selectedCountry.data.dataCompleteness || 0) * 100)}%
                           </span>
@@ -132,7 +138,7 @@ function App() {
                   </div>
                   <button
                     onClick={() => setSelectedCountry(null)}
-                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    className="ml-4 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -158,7 +164,7 @@ function App() {
                     </svg>
                   </button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                   {recommendedCountries.slice(0, 6).map((rec, index) => (
                     <div
                       key={index}
@@ -166,9 +172,9 @@ function App() {
                       onClick={() => handleCountryClick(rec.countryCode || rec.country, rec.actualData)}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-gray-900">{rec.country}</h4>
-                        <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-                          {rec.matchPercentage || 85}% correspondance
+                        <h4 className="font-semibold text-gray-900 truncate">{rec.country}</h4>
+                        <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full whitespace-nowrap ml-2">
+                          {rec.matchPercentage || 85}% match
                         </span>
                       </div>
                       <div className="text-sm text-gray-600 mb-2">

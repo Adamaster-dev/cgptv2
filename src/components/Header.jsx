@@ -3,16 +3,16 @@ import { User } from 'lucide-react';
 
 const Header = () => {
   return (
-    <div className="bg-white border-b border-gray-100 px-6 py-4">
+    <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-4">
       <div className="flex items-center justify-between">
         {/* Left Section */}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-600">Global Quality of Living Analysis</p>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-600 hidden sm:block">Global Quality of Living Analysis</p>
         </div>
 
         {/* Right Section */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 flex-shrink-0">
           {/* User Avatar */}
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
