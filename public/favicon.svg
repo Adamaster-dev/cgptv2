@@ -1,0 +1,17 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="16" cy="16" r="15" fill="#4F46E5" stroke="#312E81" stroke-width="2"/>
+  
+  <!-- Globe/Earth representation -->
+  <circle cx="16" cy="16" r="10" fill="#3B82F6"/>
+  
+  <!-- Continents/landmasses -->
+  <path d="M8 12c2 0 4 1 6 0s3-2 5-1c1 1 1 3 0 4s-3 1-4 2-2 2-4 1-3-1-3-3z" fill="#F59E0B"/>
+  <path d="M10 20c1-1 3-1 4 0s2 2 4 1c1-1 2-2 1-3s-2-1-3-2-1-2 0-2 2 0 3 1" fill="#F59E0B"/>
+  
+  <!-- Heart symbol for A&M -->
+  <path d="M16 22c-1-1-3-3-3-5s1-3 3-3 3 1 3 3-2 4-3 5z" fill="#EF4444"/>
+  
+  <!-- A&M text (simplified) -->
+  <text x="16" y="18" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="6" font-weight="bold">A&M</text>
+</svg>
