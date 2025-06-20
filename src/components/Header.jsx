@@ -7,8 +7,8 @@ const Header = () => {
       <div className="flex items-center justify-between">
         {/* Left Section */}
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-600 hidden sm:block">Global Quality of Living Analysis</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Alors on bouge où babe?</h1>
+          <p className="text-sm text-gray-600 hidden sm:block">On va choisir une destination proprement 🌎</p>
         </div>
 
         {/* Right Section */}

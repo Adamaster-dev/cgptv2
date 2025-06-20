@@ -60,16 +60,6 @@ function App() {
         {/* Header */}
         <Header />
 
-        {/* Main Title */}
-        <div className="px-4 sm:px-6 py-6 border-b border-gray-100 bg-white">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
-            Alors on bouge où babe?
-          </h1>
-          <p className="text-sm sm:text-base lg:text-lg text-gray-600 mt-2">
-            Découvrez votre destination idéale grâce à l'analyse climatique et économique
-          </p>
-        </div>
-
         {/* Dashboard Content */}
         <div className="p-4 sm:p-6 space-y-6">
           {/* AI Assistant - Top of page, expanded by default */}
